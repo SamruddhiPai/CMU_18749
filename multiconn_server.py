@@ -9,7 +9,7 @@ sel = selectors.DefaultSelector()
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read
-    print("accepted connection from", addr)
+    #print("accepted connection from", addr)
     conn.setblocking(False)
     data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
     #events = selectors.EVENT_READ | selectors.EVENT_WRITE
@@ -33,7 +33,7 @@ def service_connection(key, mask):
             #sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
-            print("echoing", repr(data.outb), "to", data.addr)
+            #print("echoing", repr(data.outb), "to", data.addr)
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
