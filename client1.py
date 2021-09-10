@@ -50,11 +50,11 @@ def service_connection(key, mask):
             data.outb = data.outb[sent:]
 
 
-if len(sys.argv) != 4:
-    print("usage:", sys.argv[0], "<host> <port> <num_connections>")
-    sys.exit(1)
+#if len(sys.argv) != 4:
+    #print("usage:", sys.argv[0], "<host> <port> <num_connections>")
+    #sys.exit(1)
 
-host, port, num_conns = sys.argv[1:4]
+host, port, num_conns = '127.0.0.1', 1234, 1
 
 try:
     while True:
