@@ -21,7 +21,7 @@ def start_connections(host, port, num_conns):
         data = types.SimpleNamespace(
             connid=connid,
             msg_total=sum(len(m) for m in messages),
-            recv_total=0,
+            recv_total=1,
             messages=list(messages),
             outb=b"",
         )
