@@ -25,7 +25,6 @@ def service_connection(key, mask):
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
             X += int(recv_data)
-            print(f"Value of X is {X}")
             data.outb += recv_data
         else:
             print("closing connection to", data.addr)
@@ -52,6 +51,8 @@ sel.register(lsock, selectors.EVENT_READ, data=None)
 
 try:
     while True:
+        print("X = " + str(X))
+        print("------")
         events = sel.select(timeout=None)
         for key, mask in events:
             if key.data is None:
