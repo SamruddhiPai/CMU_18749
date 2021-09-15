@@ -25,21 +25,18 @@ def service_connection(key, mask):
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
             X += int(recv_data)
+            print("X = " + str(X))
+            print("------")
             data.outb += recv_data
         else:
             print("closing connection to", data.addr)
             sel.unregister(sock)
-            #sock.close()
+            sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
-            #print("echoing", repr(data.outb), "to", data.addr)
+            print("echoing", repr(data.outb), "to", data.addr)
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
-
-
-#if len(sys.argv) != 3:
-    #print("usage:", sys.argv[0], "<host> <port>")
-    #sys.exit(1)
 
 host, port = '127.0.0.1', 1234
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -49,10 +46,11 @@ print("listening on", (host, port))
 lsock.setblocking(False)
 sel.register(lsock, selectors.EVENT_READ, data=None)
 
+print("X = " + str(X))
+print("------")
+
 try:
     while True:
-        print("X = " + str(X))
-        print("------")
         events = sel.select(timeout=None)
         for key, mask in events:
             if key.data is None:

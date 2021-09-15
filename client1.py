@@ -49,11 +49,6 @@ def service_connection(key, mask):
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
-
-#if len(sys.argv) != 4:
-    #print("usage:", sys.argv[0], "<host> <port> <num_connections>")
-    #sys.exit(1)
-
 host, port, num_conns = '127.0.0.1', 1234, 1
 
 try:
