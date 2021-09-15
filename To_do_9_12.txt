@@ -1,0 +1,4 @@
+Current code cleaning - understand the current code - Manasi
+3 way communication - send recv ack logging adding client_id, 1 server replica which means 1 server, adding my_state - Rituraj
+Running Client and server on separate machines - Ravi and Ojas
+Building LFD - has heartbeat_freq as a paramter, logging - Samruddhi
