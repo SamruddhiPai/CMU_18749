@@ -12,8 +12,8 @@ def accept_wrapper(sock):
     #print("accepted connection from", addr)
     conn.setblocking(False)
     data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
-    #events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    events = selectors.EVENT_READ
+    events = selectors.EVENT_READ | selectors.EVENT_WRITE
+    # events = selectors.EVENT_READ
     sel.register(conn, events, data=data)
 
 X = 0
@@ -24,15 +24,26 @@ def service_connection(key, mask):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
-            X += int(recv_data)
-            data.outb += recv_data
+            # if data.lfd:
+            #     print(data.outb,type(data.outb))
+            #     data.outb = b'I am alive!'
+            #     # data.outb = out_data
+            # else:
+            #     X += int(recv_data)
+            # X += int(recv_data)
+            try:
+                X += int(recv_data)
+            except:
+                print(data.outb,type(data.outb))
+                out_data = b'I am alive!'
+                data.outb = out_data
         else:
             print("closing connection to", data.addr)
             sel.unregister(sock)
             #sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
-            #print("echoing", repr(data.outb), "to", data.addr)
+            print("echoing", repr(data.outb), "to", data.addr)
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
