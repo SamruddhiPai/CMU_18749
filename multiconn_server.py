@@ -12,8 +12,8 @@ def accept_wrapper(sock):
     #print("accepted connection from", addr)
     conn.setblocking(False)
     data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
-    #events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    events = selectors.EVENT_READ
+    events = selectors.EVENT_READ | selectors.EVENT_WRITE
+    #events = selectors.EVENT_READ
     sel.register(conn, events, data=data)
 
 X = 0
@@ -51,9 +51,9 @@ print("------")
 
 try:
     while True:
-        events = sel.select(timeout=None)
+        events = sel.select(timeout=None) # Blocks until client ready for I/O, in effect till client sends data
         for key, mask in events:
-            if key.data is None:
+            if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                 accept_wrapper(key.fileobj)
             else:
                 service_connection(key, mask)
