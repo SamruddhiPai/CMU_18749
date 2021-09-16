@@ -24,10 +24,13 @@ def service_connection(key, mask):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
-            X += int(recv_data)
-            print("X = " + str(X))
-            print("------")
-            data.outb += recv_data
+            try:
+                X += int(recv_data)
+                print("X = " + str(X))
+                print("------")
+            except:
+                # data.outb += recv_data
+                data.outb = b'I am alive!'
         else:
             print("closing connection to", data.addr)
             sel.unregister(sock)
