@@ -76,7 +76,7 @@ def service_connection(key, mask):
     #sys.exit(1)
 import time, errno
 host, port, num_conns = '127.0.0.1', 1234, 1
-
+heart_beat = int(input('Enter heart beat frequency'))
 try:
     while True:
         # print("Enter a number:")
@@ -84,7 +84,7 @@ try:
         messages = [bytes(messages, 'utf-8')]
         start_connections(host, int(port), messages)
         events = sel.select(timeout=1)
-        time.sleep(5)
+        time.sleep(heart_beat)
         if events:
             for key, mask in events:
                 service_connection(key, mask)

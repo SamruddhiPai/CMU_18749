@@ -55,7 +55,7 @@ def service_connection(key, mask):
     #print("usage:", sys.argv[0], "<host> <port> <num_connections>")
     #sys.exit(1)
 
-host, port, num_conns = '127.0.0.1', 1234, 1 # to connect to remote server (manasi's laptop) - '172.26.64.205',12048 ,1
+host, port, num_conns = '127.0.0.1', 1234, 1 
 
 try:
     while True:
