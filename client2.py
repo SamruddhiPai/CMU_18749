@@ -40,7 +40,8 @@ def service_connection(key, mask, data):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
-            log(("Received " + str(repr(recv_data)) + " from connection " + str(data.connid)))
+            receive_str = "Received " + str(repr(recv_data)) + " from connection " + str(data.connid)
+            log(receive_str)
             data.recv_total += len(recv_data)
         if not recv_data or data.recv_total == data.msg_total:
             #print("closing connection", data.connid)

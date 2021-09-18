@@ -33,6 +33,7 @@ X = 0
 
 def service_connection(key, mask):
     global X
+    global updated
     sock = key.fileobj
     data = key.data
 
@@ -50,25 +51,22 @@ def service_connection(key, mask):
                 num = datalist[2]
                 original_X = X
                 X += int(num)
+                update = "X = " + str(original_X) + " ---> " + "X = " + str(X)
+                log(update)
                 print("------")
-                log(("X = " + str(X)))
-                print("------")
-                ackmessage = b"X = " + str(original_X) +  " -> " + " X = " + str(X)
-                data.outb = ackmessage
                 
             except:
                 # data.outb += recv_data
-                #print("PRINTING " + str(recv_data_str))
-                data.outb = b'I am alive!'
+                if (str(recv_data_str) == "b'Are you alive?'"):
+                    data.outb = b'I am alive!'
         else:
             log(("Closing connection to " + str(data.addr)))
             sel.unregister(sock)
             sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
-            #print("echoing", repr(data.outb), "to", data.addr)
             sent = sock.send(data.outb)  # Should be ready to write
-            data.outb = data.outb[sent:]
+            data.outb = data.outb[sent:] #to clear data.outb
 
 host, port = '127.0.0.1', 1234
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

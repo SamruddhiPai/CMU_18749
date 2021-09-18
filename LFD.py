@@ -19,7 +19,7 @@ def log(stringarg):
     print(printstr)
 
 heart_beat = int(input('Enter heart beat frequency (in seconds): '))
-CONN_ID = 1
+CONN_ID = 10
 sel = selectors.DefaultSelector()
 
 def start_connections(host, port):
@@ -51,7 +51,8 @@ def service_connection(key, mask, data):
         if not data.outb and data.messages:
             data.outb = data.messages.pop(0)
         if data.outb:
-            #print("sending", repr(data.outb), "to connection", data.connid)
+            send_message = "Sending " + str(repr(data.outb)) + " to connection " + str(data.connid)
+            log(send_message)
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
