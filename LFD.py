@@ -6,6 +6,18 @@ import selectors
 import types
 import time, errno
 
+def log(stringarg):
+    now = time.localtime()
+    year = str(now.tm_year)
+    month = str(now.tm_mon)
+    day = str(now.tm_mday)
+    hour = str(now.tm_hour)
+    min = str(now.tm_min)
+    sec = str(now.tm_sec)
+    timeStr = year + "/" + month + "/" + day + "_" + hour + ":" + min + ":" + sec
+    printstr = str(timeStr) + " : " + stringarg
+    print(printstr)
+
 heart_beat = int(input('Enter heart beat frequency (in seconds): '))
 CONN_ID = 1
 sel = selectors.DefaultSelector()
@@ -13,7 +25,7 @@ sel = selectors.DefaultSelector()
 def start_connections(host, port):
     server_addr = (host, port)
     connid = 2
-    print("starting connection", connid, "to", server_addr)
+    print("Starting connection", connid, "to", server_addr)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(False)
     sock.connect_ex(server_addr)
@@ -27,10 +39,12 @@ def service_connection(key, mask, data):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
-            print("received", repr(recv_data), "from connection", data.connid)
+            receive_str = "Received " + str(repr(recv_data)) + " from connection " + str(data.connid)
+            log(receive_str)
             data.recv_total += len(recv_data)
         if not recv_data or data.recv_total == data.msg_total:
-            print("closing connection", data.connid)
+            close_message = "Closing Connection " + str(data.connid)
+            log(close_message)
             sel.unregister(sock)
             #sock.close()
     if mask & selectors.EVENT_WRITE:
@@ -66,7 +80,8 @@ try:
 
 except IOError as e:
     # if e.errno == errno.EPIPE:
-    print('Server got disconnected')
+    close_message = "Server got disconnected"
+    log(close_message)
         
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")

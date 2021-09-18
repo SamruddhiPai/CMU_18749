@@ -1,0 +1,5 @@
+"<TYPE>;<MESSAGE>;<DATA>"
+
+Type can include "REQ" or "ACK"
+Message can include "Sending to" or "From"
+Data has actual data eg: integer to be added
