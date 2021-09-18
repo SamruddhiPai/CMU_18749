@@ -58,14 +58,15 @@ def service_connection(key, mask, data):
             data.outb = data.outb[sent:]
 
 start_connections(host, int(port))
-
 try:
     while True:
+        print()
         log("Enter a number:")
         header_type = "REQ;"
         header_message = "from client: " + str(CONN_ID) + ";"
         messages = "" + header_type + header_message
         header_data = input()
+
         messages = messages + header_data + ";"
         messages = [bytes(messages, 'utf-8')]
         data = types.SimpleNamespace(

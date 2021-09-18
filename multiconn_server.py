@@ -33,10 +33,9 @@ X = 0
 
 def service_connection(key, mask):
     global X
-    global updated
     sock = key.fileobj
     data = key.data
-
+    original_X = X
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
@@ -49,11 +48,12 @@ def service_connection(key, mask):
                 req_str = "REQ: " + str(repr(datalist))
                 log(req_str)
                 num = datalist[2]
-                original_X = X
                 X += int(num)
                 update = "X = " + str(original_X) + " ---> " + "X = " + str(X)
                 log(update)
                 print("------")
+                # ackmessage = b"Updated X"
+                # sock.send(ackmessage)
                 
             except:
                 # data.outb += recv_data

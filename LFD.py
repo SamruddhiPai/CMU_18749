@@ -21,6 +21,7 @@ def log(stringarg):
 heart_beat = int(input('Enter heart beat frequency (in seconds): '))
 CONN_ID = 10
 sel = selectors.DefaultSelector()
+host, port, num_conns = '127.0.0.1', 1234, 1
 
 def start_connections(host, port):
     server_addr = (host, port)
@@ -39,7 +40,7 @@ def service_connection(key, mask, data):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
-            receive_str = "Received " + str(repr(recv_data)) + " from connection " + str(data.connid)
+            receive_str = "Received " + str(repr(recv_data)) + " from Server"
             log(receive_str)
             data.recv_total += len(recv_data)
         if not recv_data or data.recv_total == data.msg_total:
@@ -51,12 +52,12 @@ def service_connection(key, mask, data):
         if not data.outb and data.messages:
             data.outb = data.messages.pop(0)
         if data.outb:
-            send_message = "Sending " + str(repr(data.outb)) + " to connection " + str(data.connid)
+            send_message = "Sending " + str(repr(data.outb)) + " to Server"
             log(send_message)
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
-host, port, num_conns = '127.0.0.1', 1234, 1
+
 start_connections(host, int(port))
 
 try:
