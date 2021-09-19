@@ -7,7 +7,7 @@ import types
 import time, errno
 from util import log
 
-heart_beat = int(input('Enter heart beat frequency (in seconds): '))
+heart_beat = float(input('Enter heart beat frequency (in seconds): '))
 CONN_ID = 10
 sel = selectors.DefaultSelector()
 host, port, num_conns = '127.0.0.1', 1234, 1
