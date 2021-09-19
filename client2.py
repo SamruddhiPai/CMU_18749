@@ -7,7 +7,7 @@ import types
 import time
 from util import log
 
-CONN_ID = 1
+CONN_ID = 2
 sel = selectors.DefaultSelector()
 host, port, num_conns = '127.0.0.1', 1234, 1
 
