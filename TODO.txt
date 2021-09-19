@@ -1,0 +1,12 @@
+Current code cleaning - understand the current code - Manasi
+3 way communication - send recv ack logging adding client_id, 1 server replica which means 1 server, adding my_state - Rituraj
+Running Client and server on separate machines - Ravi and Ojas
+Building LFD - has heartbeat_freq as a paramter, logging - Samruddhi
+
+9/19/21:
+
+print sending ack on Server side 
+print message received from LFD on the server console
+Send value of X in ACK to client
+LFD logging format
+timeout expiration in the LFD code
