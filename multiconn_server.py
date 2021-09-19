@@ -5,19 +5,7 @@ import socket
 import selectors
 import types
 import time
-
-def log(stringarg):
-    now = time.localtime()
-    year = str(now.tm_year)
-    month = str(now.tm_mon)
-    day = str(now.tm_mday)
-    hour = str(now.tm_hour)
-    min = str(now.tm_min)
-    sec = str(now.tm_sec)
-    timeStr = year + "/" + month + "/" + day + "_" + hour + ":" + min + ":" + sec
-    printstr = str(timeStr) + " : " + stringarg
-    print(printstr)
-
+from util import log
 
 sel = selectors.DefaultSelector()
 
@@ -40,11 +28,10 @@ def service_connection(key, mask):
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
             recv_data_str = str(recv_data)
-            datalist = recv_data_str.split(";") 
+            datalist = recv_data_str.split(";")
             try:
                 req_type = datalist[0]
                 req_message = datalist[1]
-                #print("REQ: ", datalist)
                 req_str = "REQ: " + str(repr(datalist))
                 log(req_str)
                 num = datalist[2]
@@ -52,11 +39,9 @@ def service_connection(key, mask):
                 update = "X = " + str(original_X) + " ---> " + "X = " + str(X)
                 log(update)
                 print("------")
-                # ackmessage = b"Updated X"
-                # sock.send(ackmessage)
+                data.outb = b'Acknowledgement'
                 
             except:
-                # data.outb += recv_data
                 if (str(recv_data_str) == "b'Are you alive?'"):
                     data.outb = b'I am alive!'
         else:
