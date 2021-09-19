@@ -5,23 +5,11 @@ import socket
 import selectors
 import types
 import time
+from util import log
 
 CONN_ID = 2
 sel = selectors.DefaultSelector()
-
 host, port, num_conns = '127.0.0.1', 1234, 1
-
-def log(stringarg):
-    now = time.localtime()
-    year = str(now.tm_year)
-    month = str(now.tm_mon)
-    day = str(now.tm_mday)
-    hour = str(now.tm_hour)
-    min = str(now.tm_min)
-    sec = str(now.tm_sec)
-    timeStr = year + "/" + month + "/" + day + "_" + hour + ":" + min + ":" + sec
-    printstr = str(timeStr) + " : " + stringarg
-    print(printstr)
 
 def start_connections(host, port):
     server_addr = (host, port)
@@ -41,6 +29,7 @@ def service_connection(key, mask, data):
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
             receive_str = "Received " + str(repr(recv_data)) + " from connection " + str(data.connid)
+            # print()
             log(receive_str)
             data.recv_total += len(recv_data)
         if not recv_data or data.recv_total == data.msg_total:
@@ -57,32 +46,42 @@ def service_connection(key, mask, data):
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
+prev_event = 1
 start_connections(host, int(port))
-try:
+try: 
     while True:
-        print()
-        log("Enter a number:")
-        header_type = "REQ;"
-        header_message = "from client: " + str(CONN_ID) + ";"
-        messages = "" + header_type + header_message
-        header_data = input()
-
-        messages = messages + header_data + ";"
-        messages = [bytes(messages, 'utf-8')]
-        data = types.SimpleNamespace(
-            connid=CONN_ID,
-            msg_total=1024,
-            recv_total=0,
-            messages=list(messages),
-            outb=b"",
-        )
         events = sel.select(timeout=1)
-        if events:
+        if prev_event == 1 and events[0][-1]==2:
+            header_type = "REQ;"
+            header_message = "from client: " + str(CONN_ID) + ";"
+            messages = "" + header_type + header_message
+            print()
+            log("Enter a number:")
+            header_data = input()
+            messages = messages + header_data + ";"
+            messages = [bytes(messages, 'utf-8')]
+            data = types.SimpleNamespace(
+                connid=CONN_ID,
+                msg_total=1024,
+                recv_total=0,
+                messages=list(messages),
+                outb=b"",
+            )
             for key, mask in events:
                 service_connection(key, mask, data)
-        # Check for a socket being monitored to continue.
-        #if not sel.get_map():
-            #break
+
+        elif events[0][-1]==1:
+            data = types.SimpleNamespace(
+                connid=CONN_ID,
+                msg_total=1024,
+                recv_total=0,
+                outb=b"",
+            ) 
+            for key, mask in events:
+                service_connection(key, mask, data)
+        
+        prev_event = events[0][-1]
+        
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")
 finally:
