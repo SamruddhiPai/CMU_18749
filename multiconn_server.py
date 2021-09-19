@@ -13,7 +13,11 @@ def accept_wrapper(sock):
     conn.setblocking(False)
     data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
+<<<<<<< HEAD
     # events = selectors.EVENT_READ
+=======
+    #events = selectors.EVENT_READ
+>>>>>>> main
     sel.register(conn, events, data=data)
 
 X = 0
@@ -24,6 +28,7 @@ def service_connection(key, mask):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
+<<<<<<< HEAD
             # if data.lfd:
             #     print(data.outb,type(data.outb))
             #     data.outb = b'I am alive!'
@@ -37,20 +42,24 @@ def service_connection(key, mask):
                 print(data.outb,type(data.outb))
                 out_data = b'I am alive!'
                 data.outb = out_data
+=======
+            try:
+                X += int(recv_data)
+                print("X = " + str(X))
+                print("------")
+            except:
+                # data.outb += recv_data
+                data.outb = b'I am alive!'
+>>>>>>> main
         else:
             print("closing connection to", data.addr)
             sel.unregister(sock)
-            #sock.close()
+            sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
             print("echoing", repr(data.outb), "to", data.addr)
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
-
-
-#if len(sys.argv) != 3:
-    #print("usage:", sys.argv[0], "<host> <port>")
-    #sys.exit(1)
 
 host, port = '127.0.0.1', 1234
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -60,13 +69,14 @@ print("listening on", (host, port))
 lsock.setblocking(False)
 sel.register(lsock, selectors.EVENT_READ, data=None)
 
+print("X = " + str(X))
+print("------")
+
 try:
     while True:
-        print("X = " + str(X))
-        print("------")
-        events = sel.select(timeout=None)
+        events = sel.select(timeout=None) # Blocks until client ready for I/O, in effect till client sends data
         for key, mask in events:
-            if key.data is None:
+            if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                 accept_wrapper(key.fileobj)
             else:
                 service_connection(key, mask)
