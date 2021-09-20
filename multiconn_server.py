@@ -39,11 +39,15 @@ def service_connection(key, mask):
                 update = "X = " + str(original_X) + " ---> " + "X = " + str(X)
                 log(update)
                 print("------")
-                data.outb = b'Acknowledgement'
+                data.outb = b'Acknowledgement'+ update
+                print("Acknowledgement sent")
                 
             except:
                 if (str(recv_data_str) == "b'Are you alive?'"):
                     data.outb = b'I am alive!'
+                    lfd_rec = "message received from LFD"
+                    log(lfd_rec)
+                #print("", end = "")
         else:
             log(("Closing connection to " + str(data.addr)))
             sel.unregister(sock)

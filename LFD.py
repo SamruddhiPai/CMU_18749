@@ -7,7 +7,8 @@ import types
 import time, errno
 from util import log
 
-heart_beat = float(input('Enter heart beat frequency (in seconds): '))
+
+heart_beat = 1 #float(input('Enter heart beat frequency (in seconds): '))
 CONN_ID = 10
 sel = selectors.DefaultSelector()
 host, port, num_conns = '127.0.0.1', 1234, 1
@@ -29,7 +30,7 @@ def service_connection(key, mask, data):
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)  # Should be ready to read
         if recv_data:
-            receive_str = "Received " + str(repr(recv_data)) + " from Server"
+            receive_str = "Received " + str(repr(recv_data)) + " from Server"+" "+ str(host) + ":" + str(port)
             log(receive_str)
             data.recv_total += len(recv_data)
         if not recv_data or data.recv_total == data.msg_total:
@@ -41,31 +42,47 @@ def service_connection(key, mask, data):
         if not data.outb and data.messages:
             data.outb = data.messages.pop(0)
         if data.outb:
-            send_message = "Sending " + str(repr(data.outb)) + " to Server"
-            log(send_message)
-            sent = sock.send(data.outb)  # Should be ready to write
-            data.outb = data.outb[sent:]
+            if (not len(stack)) or (stack[-1] != 2):
+                send_message = "Sending " + str(repr(data.outb)) + " to Server" +" "+ str(host) + ":" + str(port)
+                log(send_message)
+                sent = sock.send(data.outb)  # Should be ready to write
+                data.outb = data.outb[sent:]
 
 
 start_connections(host, int(port))
-
+server_connection_buffer = 1
+macOS_buffer = 0
+resistance = server_connection_buffer + macOS_buffer
+stack = []
 try:
     while True:
+        if resistance == 0:
+            if (len(stack) == 2):
+                l1 = stack.pop()
+                l2 = stack.pop()
+                if not(l1 in [1,3] and l2 == 2):
+                    print("Heartbeat Fail! Server is dead!")
+                    break
+        else:
+            resistance -= 1
+            if len(stack):
+                stack.pop()
         messages = 'Are you alive?'
         messages = [bytes(messages, 'utf-8')]
         data = types.SimpleNamespace(
-            connid=CONN_ID,
-            msg_total=1024,
-            recv_total=0,
-            messages=list(messages),
-            outb=b"",
-        )
-        events = sel.select(timeout=1)
+                    connid=CONN_ID,
+                    msg_total=1024,
+                    recv_total=0,
+                    messages=list(messages),
+                    outb=b"",
+                )
+        events = sel.select()#timeout=1)
         if events:
             for key, mask in events:
-                service_connection(key, mask, data)
+                flag = mask
+                service_connection(key, mask, data)  
+        stack.append(flag)
         time.sleep(heart_beat)
-
 except IOError as e:
     close_message = "Server got disconnected"
     log(close_message)
