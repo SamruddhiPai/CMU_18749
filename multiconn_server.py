@@ -40,6 +40,7 @@ def service_connection(key, mask):
                 log(update)
                 print("------")
                 data.outb = b'Acknowledgement'
+                print('Updated data.outb')
                 
             except:
                 if (str(recv_data_str) == "b'Are you alive?'"):

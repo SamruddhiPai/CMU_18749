@@ -51,11 +51,11 @@ start_connections(host, int(port))
 try: 
     while True:
         events = sel.select(timeout=1)
-        if prev_event == 1 and events[0][-1]==2:
-            header_type = "REQ;"
-            header_message = "from client: " + str(CONN_ID) + ";"
-            messages = "" + header_type + header_message
-            print()
+        header_type = "REQ;"
+        header_message = "from client: " + str(CONN_ID) + ";"
+        messages = "" + header_type + header_message
+        print('events[0][-1] =', events[0][-1])
+        if events[0][-1] != 1:
             log("Enter a number:")
             header_data = input()
             messages = messages + header_data + ";"
@@ -69,19 +69,23 @@ try:
             )
             for key, mask in events:
                 service_connection(key, mask, data)
-
-        elif events[0][-1]==1:
+                sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
+                print('Modified key')
+                events = sel.select(timeout=1)
+                #print('events[0][-1] =', events[0][-1])
+        else:
+            print('in else')
             data = types.SimpleNamespace(
-                connid=CONN_ID,
-                msg_total=1024,
-                recv_total=0,
-                outb=b"",
-            ) 
-            for key, mask in events:
-                service_connection(key, mask, data)
-        
-        prev_event = events[0][-1]
-        
+            connid=CONN_ID,
+            msg_total=1024,
+            recv_total=0,
+            outb=b"",
+        ) 
+        for key, mask in events:
+            service_connection(key, mask, data)
+            sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
+            events = sel.select(timeout=1)
+    
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")
 finally:
