@@ -46,7 +46,6 @@ def service_connection(key, mask, data):
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
-prev_event = 1
 start_connections(host, int(port))
 try: 
     while True:
@@ -54,7 +53,6 @@ try:
         header_type = "REQ;"
         header_message = "from client: " + str(CONN_ID) + ";"
         messages = "" + header_type + header_message
-        print('events[0][-1] =', events[0][-1])
         if events[0][-1] != 1:
             log("Enter a number:")
             header_data = input()
@@ -70,9 +68,7 @@ try:
             for key, mask in events:
                 service_connection(key, mask, data)
                 sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
-                print('Modified key')
                 events = sel.select(timeout=1)
-                #print('events[0][-1] =', events[0][-1])
         else:
             print('in else')
             data = types.SimpleNamespace(
