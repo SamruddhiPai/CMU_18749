@@ -61,7 +61,8 @@ try:
                 l1 = stack.pop()
                 l2 = stack.pop()
                 if not(l1 in [1,3] and l2 == 2):
-                    print("Heartbeat Fail! Server is dead!")
+                    dead = "Heartbeat Fail! Server is dead!"
+                    log(dead)
                     break
         else:
             resistance -= 1
@@ -88,5 +89,5 @@ except IOError as e:
     log(close_message)
         
 except KeyboardInterrupt:
-    print("caught keyboard interrupt, exiting")
+    log("caught keyboard interrupt, exiting")
 
