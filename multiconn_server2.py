@@ -54,7 +54,7 @@ def service_connection(key, mask):
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:] #to clear data.outb
 
-host, port = '127.0.0.1', 1234
+host, port = '127.0.0.1', 12345
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 lsock.bind((host, port))
 lsock.listen()
