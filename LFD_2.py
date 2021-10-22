@@ -86,17 +86,6 @@ lfd_client = LFD_client(host, port, sel_client)
 lfd_client.start()
 
 
-#LFD AS SERVER
-CONN_ID = 10
-sel_server = selectors.DefaultSelector()
-lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-lsock.bind((host, port))
-lsock.listen()
-print("listening on", (host, port))
-lsock.setblocking(False)
-sel_server.register(lsock, selectors.EVENT_READ, data=None)
-
-
 # LFD AS SERVER
 class LFD_server(Thread):
     def __init__(self,host,port,sel):
@@ -111,9 +100,53 @@ class LFD_server(Thread):
         data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
         #events = selectors.EVENT_READ
-        sel.register(conn, events, data=data)
+        self.sel.register(conn, events, data=data)
+
+    def service_connection(self, key, mask):
+        sock = key.fileobj
+        data = key.data
+        if mask & selectors.EVENT_READ:
+            recv_data = sock.recv(1024)  # Should be ready to read
+            if recv_data:
+                recv_data_str = str(recv_data)
+                datalist = recv_data_str.split(";")
+                try:
+                    req_type = datalist[0]
+                    req_message = datalist[1]
+                    req_str = "REQ: " + str(repr(datalist))
+                    log(req_str)
+                    num = datalist[2]
+                    log(update)
+                    print("------")
+                    data.outb = b'Acknowledgement'
+                    print('Updated data.outb')
+                    
+                except:
+                    if (str(recv_data_str) == "b'Are you alive?'"):
+                        data.outb = b'I am alive!'
+            else:
+                log(("Closing connection to " + str(data.addr)))
+                self.sel.unregister(sock)
+                sock.close()
+        if mask & selectors.EVENT_WRITE:
+            if data.outb:
+                sent = sock.send(data.outb)  # Should be ready to write
+                data.outb = data.outb[sent:] #to clear data.outb
+    
+    def run(self):
+        lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock.bind((self.host, self.port))
+        lsock.listen()
+        print("listening on", (self.host, self.port))
+        lsock.setblocking(False)
+        self.sel.register(lsock, selectors.EVENT_READ, data=None)
+
 
     
 
-
-
+#LFD AS SERVER
+CONN_ID = 10
+sel_server = selectors.DefaultSelector()
+host, port, num_conns = '127.0.0.1', 1235, 1
+lfd_server = LFD_server(host, port, sel_server)
+lfd_server.start()
