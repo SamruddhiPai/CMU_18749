@@ -83,6 +83,7 @@ try:
                 messages=list(messages),
                 outb=b"",
             )
+            
             data2 = types.SimpleNamespace(
                 connid=CONN_ID,
                 msg_total=1024,
@@ -127,6 +128,7 @@ try:
             c1_s2.service_connection(key, mask, data2)
             s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
             events2 = s2_sel.select(timeout=1)
+
     
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")

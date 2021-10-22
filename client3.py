@@ -64,6 +64,7 @@ c3_s2 = Client(host2,port2,s2_sel)
 c3_s1.start_connections()
 c3_s2.start_connections()
 
+
 try: 
     while True:
         events1 = s1_sel.select(timeout=1)
@@ -127,6 +128,7 @@ try:
             c3_s2.service_connection(key, mask, data2)
             s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
             events2 = s2_sel.select(timeout=1)
+
     
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")

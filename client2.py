@@ -127,6 +127,7 @@ try:
             c2_s2.service_connection(key, mask, data2)
             s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
             events2 = s2_sel.select(timeout=1)
+
     
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")
