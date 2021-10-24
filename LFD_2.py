@@ -119,6 +119,7 @@ class LFD_server(Thread):
                             server_found = True
                             log("Server detected")
                             data.outb = b'Server detected.'
+                            time.sleep(heart_beat)
 
                 else:
                     log(("Closing connection to " + str(data.addr)))
@@ -140,6 +141,8 @@ class LFD_server(Thread):
         self.sel.register(lsock, selectors.EVENT_READ, data=None)
         try:
             while True:
+                # print(heart_beat)
+                # time.sleep(heart_beat)
                 events = self.sel.select(timeout=None) # Blocks until client ready for I/O, in effect till client sends data
                 # print(events)
                 for key, mask in events:
