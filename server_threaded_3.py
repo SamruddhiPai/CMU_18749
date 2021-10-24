@@ -7,6 +7,7 @@ import types
 import time
 from util import log
 from threading import Thread
+import config
 
 
 class Server_as_Server(Thread):
@@ -156,17 +157,19 @@ class Server_as_Client(Thread):
             print("caught keyboard interrupt, exiting")
 
 
-connid = 1
+connid = 3
 
-host_s, port_s = '127.0.0.1', 1236
+#host_s, port_s = '127.0.0.1', 1234
+host_s, port_s = config.server_3_ip, config.server_3_listen
 sel_server = selectors.DefaultSelector()
 X = 0
 server_as_server = Server_as_Server(host_s, port_s, sel_server)
 server_as_server.start()
 
 
-CONN_ID = 10
-host_c, port_c = '127.0.0.1', 1237
+CONN_ID = 30
+#host_c, port_c = '127.0.0.1', 1235
+host_c, port_c = config.server_3_ip, config.server_3_sendto
 sel_client = selectors.DefaultSelector()
 server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()

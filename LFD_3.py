@@ -7,6 +7,7 @@ import types
 import time, errno
 from util import log
 from threading import Thread
+import config
 
 class LFD_client(Thread):
     def __init__(self,host,port,sel):
@@ -163,9 +164,9 @@ server_found = False
 heart_beat = float(input('\n\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
-CONN_ID = 10
+CONN_ID = 30
 sel_server = selectors.DefaultSelector()
-host_s, port_s, num_conns = '127.0.0.1', 1235, 1
+host_s, port_s, num_conns = config.lfd_3_ip, config.lfd_3_listen, 1
 lfd_server = LFD_server(host_s, port_s, sel_server)
 lfd_server.start()
 

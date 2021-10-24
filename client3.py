@@ -6,13 +6,17 @@ import selectors
 import types
 import time
 from util import log
+import config
 
-CONN_ID = 3
+CONN_ID = 1
 s1_sel = selectors.DefaultSelector()
 s2_sel = selectors.DefaultSelector()
 num_conns = CONN_ID
-host1, port1 = '127.0.0.1', 1234
-host2, port2 = '172.26.78.32', 14064
+# host1, port1 = '127.0.0.1', 1234
+# # host2, port2 = '172.26.78.32', 14064
+# host2, port2 = '127.0.0.1', 1236
+host1, port1 = config.server_1_ip, config.server_1_listen
+host2, port2 = config.server_2_ip, config.server_2_listen
 
 class Client:
 
@@ -59,11 +63,10 @@ class Client:
 
 # if __name__=='main':
 
-c3_s1 = Client(host1,port1,s1_sel)
-c3_s2 = Client(host2,port2,s2_sel)
-c3_s1.start_connections()
-c3_s2.start_connections()
-
+c1_s1 = Client(host1,port1,s1_sel)
+c1_s2 = Client(host2,port2,s2_sel)
+c1_s1.start_connections()
+c1_s2.start_connections()
 
 try: 
     while True:
@@ -84,6 +87,7 @@ try:
                 messages=list(messages),
                 outb=b"",
             )
+            
             data2 = types.SimpleNamespace(
                 connid=CONN_ID,
                 msg_total=1024,
@@ -94,14 +98,14 @@ try:
 
             for key, mask in events1:
                 # print('Event1 before\n',events1)
-                c3_s1.service_connection(key, mask, data1)
+                c1_s1.service_connection(key, mask, data1)
                 s1_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
                 events1 = s1_sel.select(timeout=1)
                 # print('Event1 after\n',events1)
             # print('outside 1st for loop')
             
             for key, mask in events2:
-                c3_s2.service_connection(key, mask, data2)
+                c1_s2.service_connection(key, mask, data2)
                 s2_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
                 events2 = s2_sel.select(timeout=1)
                 
@@ -120,12 +124,12 @@ try:
             outb=b"",
         ) 
         for key, mask in events1:
-            c3_s1.service_connection(key, mask, data1)
+            c1_s1.service_connection(key, mask, data1)
             s1_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
             events1 = s1_sel.select(timeout=1)
         
         for key, mask in events2:
-            c3_s2.service_connection(key, mask, data2)
+            c1_s2.service_connection(key, mask, data2)
             s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
             events2 = s2_sel.select(timeout=1)
 

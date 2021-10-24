@@ -6,14 +6,17 @@ import selectors
 import types
 import time
 from util import log
+import config
 
 CONN_ID = 1
 s1_sel = selectors.DefaultSelector()
 s2_sel = selectors.DefaultSelector()
 num_conns = CONN_ID
-host1, port1 = '127.0.0.1', 1234
-# host2, port2 = '172.26.78.32', 14064
-host2, port2 = '127.0.0.1', 1236
+# host1, port1 = '127.0.0.1', 1234
+# # host2, port2 = '172.26.78.32', 14064
+# host2, port2 = '127.0.0.1', 1236
+host1, port1 = config.server_1_ip, config.server_1_listen
+host2, port2 = config.server_2_ip, config.server_2_listen
 
 class Client:
 
