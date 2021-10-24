@@ -98,31 +98,34 @@ class LFD_server(Thread):
         sock = key.fileobj
         data = key.data
         if mask & selectors.EVENT_READ:
-            recv_data = sock.recv(1024)  # Should be ready to read
-            if recv_data:
-                recv_data_str = str(recv_data)
-                datalist = recv_data_str.split(";")
-                try:
-                    req_type = datalist[0]
-                    req_message = datalist[1]
-                    req_str = "REQ: " + str(repr(datalist))
-                    log(req_str)
-                    num = datalist[2]
-                    log(update)
-                    print("------")
-                    data.outb = b'Acknowledgement'
-                    print('Updated data.outb')
-                    
-                except:
-                    if (str(recv_data_str) == "b'I am a server and I am up.'"):
-                        server_found = True
-                        log("Server detected")
-                        data.outb = b'Server detected.'
+            try:
+                recv_data = sock.recv(1024)  # Should be ready to read
+                if recv_data:
+                    recv_data_str = str(recv_data)
+                    datalist = recv_data_str.split(";")
+                    try:
+                        req_type = datalist[0]
+                        req_message = datalist[1]
+                        req_str = "REQ: " + str(repr(datalist))
+                        log(req_str)
+                        num = datalist[2]
+                        log(update)
+                        print("------")
+                        data.outb = b'Acknowledgement'
+                        print('Updated data.outb')
+                        
+                    except:
+                        if (str(recv_data_str) == "b'I am a server and I am up.'"):
+                            server_found = True
+                            log("Server detected")
+                            data.outb = b'Server detected.'
 
-            else:
-                log(("Closing connection to " + str(data.addr)))
-                self.sel.unregister(sock)
-                sock.close()
+                else:
+                    log(("Closing connection to " + str(data.addr)))
+                    self.sel.unregister(sock)
+                    sock.close()
+            except:
+                log("No response from server.")
         if mask & selectors.EVENT_WRITE:
             if data.outb:
                 sent = sock.send(data.outb)  # Should be ready to write
