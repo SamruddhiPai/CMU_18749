@@ -49,41 +49,33 @@ class LFD_client(Thread):
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
     def run(self):
-        self.start_connections(self.host, int(self.port))
-        try:
-            while True:
-                messages = 'Are you alive?'
-                messages = [bytes(messages, 'utf-8')]
-                data = types.SimpleNamespace(
-                    connid=CONN_ID,
-                    msg_total=1024,
-                    recv_total=0,
-                    messages=list(messages),
-                    outb=b"",
-                )
-                events = self.sel.select(timeout=1)
-                if events:
-                    for key, mask in events:
-                        self.service_connection(key, mask, data)
-                time.sleep(heart_beat)
+        server_found = str(input("Server on. LFD on? : "))
+        if (server_found == 'y' or server_found == 'Y'):
+            self.start_connections(self.host, int(self.port))
+            try:
+                while True:
+                    messages = 'Are you alive?'
+                    messages = [bytes(messages, 'utf-8')]
+                    data = types.SimpleNamespace(
+                        connid=CONN_ID,
+                        msg_total=1024,
+                        recv_total=0,
+                        messages=list(messages),
+                        outb=b"",
+                    )
+                    events = self.sel.select(timeout=1)
+                    if events:
+                        for key, mask in events:
+                            self.service_connection(key, mask, data)
+                    time.sleep(heart_beat)
 
-        except IOError as e:
-            close_message = "Server got disconnected"
-            log(close_message)
-                
-        except KeyboardInterrupt:
-            print("caught keyboard interrupt, exiting")
+            except IOError as e:
+                close_message = "Server got disconnected"
+                log(close_message)
+                    
+            except KeyboardInterrupt:
+                print("caught keyboard interrupt, exiting")
 
-
-
-# LFD AS CLIENT
-heart_beat = float(input('Enter heart beat frequency (in seconds): '))
-CONN_ID = 10
-sel_client = selectors.DefaultSelector()
-host, port, num_conns = '127.0.0.1', 1234, 1
-
-lfd_client = LFD_client(host, port, sel_client)
-lfd_client.start()
 
 
 # LFD AS SERVER
@@ -122,8 +114,11 @@ class LFD_server(Thread):
                     print('Updated data.outb')
                     
                 except:
-                    if (str(recv_data_str) == "b'Are you alive?'"):
-                        data.outb = b'I am alive!'
+                    if (str(recv_data_str) == "b'I am a server and I am up.'"):
+                        server_found = True
+                        log("Server detected")
+                        data.outb = b'Server detected.'
+
             else:
                 log(("Closing connection to " + str(data.addr)))
                 self.sel.unregister(sock)
@@ -137,16 +132,43 @@ class LFD_server(Thread):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock.bind((self.host, self.port))
         lsock.listen()
-        print("listening on", (self.host, self.port))
+        # print("\nListening on", (self.host, self.port))
         lsock.setblocking(False)
         self.sel.register(lsock, selectors.EVENT_READ, data=None)
+        try:
+            while True:
+                events = self.sel.select(timeout=None) # Blocks until client ready for I/O, in effect till client sends data
+                # print(events)
+                for key, mask in events:
+                    if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
+                        self.accept_wrapper(key.fileobj)
+                    else:
+                        self.service_connection(key, mask)
+        except KeyboardInterrupt:
+            print("caught keyboard interrupt, exiting")
+        finally:
+            self.sel.close()
 
 
     
 
+server_found = False
+
+heart_beat = float(input('\n\nEnter heart beat frequency (in seconds): '))
+
 #LFD AS SERVER
 CONN_ID = 10
 sel_server = selectors.DefaultSelector()
-host, port, num_conns = '127.0.0.1', 1235, 1
-lfd_server = LFD_server(host, port, sel_server)
+host_s, port_s, num_conns = '127.0.0.1', 1235, 1
+lfd_server = LFD_server(host_s, port_s, sel_server)
 lfd_server.start()
+
+# LFD AS CLIENT
+# heart_beat = None
+# CONN_ID = 10
+# sel_client = selectors.DefaultSelector()
+# host_c, port_c, num_conns = '127.0.0.1', 1234, 1
+
+# lfd_client = LFD_client(host_c, port_c, sel_client)
+# lfd_client.start()
+

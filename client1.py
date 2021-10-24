@@ -13,7 +13,7 @@ s2_sel = selectors.DefaultSelector()
 num_conns = CONN_ID
 host1, port1 = '127.0.0.1', 1234
 # host2, port2 = '172.26.78.32', 14064
-host2, port2 = '127.0.0.1', 1235
+host2, port2 = '127.0.0.1', 1236
 
 class Client:
 
