@@ -12,15 +12,17 @@ s1_sel = selectors.DefaultSelector()
 s2_sel = selectors.DefaultSelector()
 num_conns = CONN_ID
 host1, port1 = '127.0.0.1', 1234
-# host2, port2 = '172.26.78.32', 14064
+# host2, port2 = '172.26.78.32',14064
 host2, port2 = '127.0.0.1', 1235
 
 class Client:
 
-    def __init__(self,host,port,sel):
+    def __init__(self,host,port,sel, replicaID):
         self.host = host
         self.port = port
         self.sel = sel
+        self.output = ""
+        self.replicaID = replicaID
 
     def start_connections(self):
         server_addr = (self.host, self.port)
@@ -39,8 +41,12 @@ class Client:
         if mask & selectors.EVENT_READ:
             self.recv_data = self.sock.recv(1024)  # Should be ready to read
             if self.recv_data:
-                receive_str = "Received " + str(repr(self.recv_data)) + " from connection " + str(data.connid)
+                if c1_s1.output != "":
+                    receive_str = "Discarded Duplicate reply from " + self.replicaID
+                else:
+                    receive_str = "Received " + str(repr(self.recv_data)) + " from connection " + str(data.connid)
                 # print()
+                self.output = receive_str
                 log(receive_str)
                 data.recv_total += len(self.recv_data)
             if not self.recv_data or data.recv_total == data.msg_total:
@@ -60,8 +66,8 @@ class Client:
 
 # if __name__=='main':
 
-c1_s1 = Client(host1,port1,s1_sel)
-c1_s2 = Client(host2,port2,s2_sel)
+c1_s1 = Client(host1,port1,s1_sel, "S1")
+c1_s2 = Client(host2,port2,s2_sel, "S2")
 c1_s1.start_connections()
 c1_s2.start_connections()
 
@@ -69,6 +75,7 @@ try:
     while True:
         events1 = s1_sel.select(timeout=1)
         events2 = s2_sel.select(timeout=1)
+        s2_sel.close()
         header_type = "REQ;"
         header_message = "from client: " + str(CONN_ID) + ";"
         messages = "" + header_type + header_message
@@ -129,6 +136,9 @@ try:
             c1_s2.service_connection(key, mask, data2)
             s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
             events2 = s2_sel.select(timeout=1)
+        
+        c1_s1.output = ""
+        c1_s2.output = ""
 
     
 except KeyboardInterrupt:
