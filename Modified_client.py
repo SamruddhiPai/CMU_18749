@@ -13,13 +13,13 @@ s2_sel = selectors.DefaultSelector()
 s3_sel = selectors.DefaultSelector()
 GFD_sel = selectors.DefaultSelector()
 num_conns = CONN_ID
-host1, port1 = '127.0.0.1', 1234
+host1, port1 = '10.0.0.183', 1200
 # host2, port2 = '172.26.78.32',14064
-host2, port2 = '127.0.0.1', 1235
+host2, port2 = '10.0.0.183', 1201
 
-host3, port3 = '127.0.0.1', 1236
+host3, port3 = '10.0.0.183', 1202
 
-host, port = '127.0.0.1', 1285
+host, port = '10.0.0.183', 1203
 
 class Client:
 
@@ -124,20 +124,21 @@ class GFD:
     def run(self):
         self.start_connections(self.host, int(self.port))
         try:
-            messages = 'Send me the Status'
-            messages = [bytes(messages, 'utf-8')]
-            data = types.SimpleNamespace(
-                connid=CONN_ID,
-                msg_total=1024,
-                recv_total=0,
-                messages=list(messages),
-                outb=b"",
-            )
-            events = self.sel.select(timeout=1)
-            if events:
-                for key, mask in events:
-                    self.service_connection(key, mask, data)
-            time.sleep(1)
+            for i in range(3):
+                messages = 'Send me the Status'
+                messages = [bytes(messages, 'utf-8')]
+                data = types.SimpleNamespace(
+                    connid=CONN_ID,
+                    msg_total=1024,
+                    recv_total=0,
+                    messages=list(messages),
+                    outb=b"",
+                )
+                events = self.sel.select(timeout=1)
+                if events:
+                    for key, mask in events:
+                        self.service_connection(key, mask, data)
+                time.sleep(1)
 
         except IOError as e:
             close_message = "Server got disconnected"
@@ -149,115 +150,112 @@ class GFD:
 
 c1_s1 = Client(host1,port1,s1_sel, "S1")
 c1_s2 = Client(host2,port2,s2_sel, "S2")
-c1_s3 = Client(host2,port2,s3_sel, "S3")
+c1_s3 = Client(host2,port3,s3_sel, "S3")
 c1_GFD = GFD(host, port, GFD_sel)
-# c1_s1.start_connections()
-# c1_s2.start_connections()
-# c1_s3.start_connections()
+c1_s1.start_connections()
+c1_s2.start_connections()
+c1_s3.start_connections()
 
 try: 
     while True:
         c1_GFD.run()
-        if c1_GFD.s1:
-            events1 = s1_sel.select(timeout=1)
-            header_type = "REQ;"
-            header_message = "from client: " + str(CONN_ID) + ";"
-            messages = "" + header_type + header_message
-            if events1[0][-1] != 1:  # writing data - mask != 1
-                log("Enter a number:")
-                header_data = input()
-                messages = messages + header_data + ";"
-                messages = [bytes(messages, 'utf-8')]
-                data1 = types.SimpleNamespace(
+        header_type = "REQ;"
+        header_message = "from client: " + str(CONN_ID) + ";"
+        messages = "" + header_type + header_message
+        log("Enter a number:")
+        header_data = input()
+        messages = messages + header_data + ";"
+        messages = [bytes(messages, 'utf-8')]
+        for i in range(2):
+            if c1_GFD.s1:
+                events1 = s1_sel.select(timeout=1)
+                print("Events1: ", events1)
+                # header_type = "REQ;"
+                # header_message = "from client: " + str(CONN_ID) + ";"
+                # messages = "" + header_type + header_message
+                if events1[0][-1] != 1:  # writing data - mask != 1
+                    # messages = messages + header_data + ";"
+                    # messages = [bytes(messages, 'utf-8')]
+                    data1 = types.SimpleNamespace(
+                        connid=CONN_ID,
+                        msg_total=1024,
+                        recv_total=0,
+                        messages=list(messages),
+                        outb=b"",
+                    )
+                    for key, mask in events1:
+                        # print('Event1 before\n',events1)
+                        c1_s1.service_connection(key, mask, data1)
+                        s1_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
+                        events1 = s1_sel.select(timeout=1)
+                else:
+                    # print('in else')
+                    data1 = types.SimpleNamespace(
                     connid=CONN_ID,
                     msg_total=1024,
                     recv_total=0,
-                    messages=list(messages),
                     outb=b"",
-                 )
-                for key, mask in events1:
-                    # print('Event1 before\n',events1)
-                    c1_s1.service_connection(key, mask, data1)
-                    s1_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
-                    events1 = s1_sel.select(timeout=1)
-            else:
-                # print('in else')
-                data1 = types.SimpleNamespace(
-                connid=CONN_ID,
-                msg_total=1024,
-                recv_total=0,
-                outb=b"",
+                    ) 
+                    for key, mask in events1:
+                        # print('Event1 before\n',events1)
+                        c1_s1.service_connection(key, mask, data1)
+                        s1_sel.modify(key.fileobj, selectors.EVENT_READ|selectors.EVENT_WRITE, data=None)
+                        events1 = s1_sel.select(timeout=1)
+            if c1_GFD.s2:
+                events2 = s2_sel.select(timeout=1)
+                if events2[0][-1] != 1:  # writing data - mask != 1
+                    # messages = messages + header_data + ";"
+                    # messages = [bytes(messages, 'utf-8')]
+                    data2 = types.SimpleNamespace(
+                        connid=CONN_ID,
+                        msg_total=1024,
+                        recv_total=0,
+                        messages=list(messages),
+                        outb=b"",
+                    )
+                    for key, mask in events2:
+                        c1_s2.service_connection(key, mask, data2)
+                        s2_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
+                        events2 = s2_sel.select(timeout=1)
+                else:
+                    data2 = types.SimpleNamespace(
+                    connid=CONN_ID,
+                    msg_total=1024,
+                    recv_total=0,
+                    outb=b"",
                 ) 
-                for key, mask in events1:
-                    # print('Event1 before\n',events1)
-                    c1_s1.service_connection(key, mask, data1)
-                    s1_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
-                    events1 = s1_sel.select(timeout=1)
-        if c1_GFD.s2:
-            events2 = s2_sel.select(timeout=1)
-            header_type = "REQ;"
-            header_message = "from client: " + str(CONN_ID) + ";"
-            messages = "" + header_type + header_message
-            if events2[0][-1] != 1:  # writing data - mask != 1
-                log("Enter a number:")
-                header_data = input()
-                messages = messages + header_data + ";"
-                messages = [bytes(messages, 'utf-8')]
-                data2 = types.SimpleNamespace(
-                    connid=CONN_ID,
-                    msg_total=1024,
-                    recv_total=0,
-                    messages=list(messages),
-                    outb=b"",
-                )
-                for key, mask in events2:
-                    c1_s2.service_connection(key, mask, data2)
-                    s2_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
-                    events2 = s2_sel.select(timeout=1)
-            else:
-                data2 = types.SimpleNamespace(
-                connid=CONN_ID,
-                msg_total=1024,
-                recv_total=0,
-                outb=b"",
-            ) 
-                for key, mask in events2:
-                    c1_s2.service_connection(key, mask, data2)
-                    s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
-                    events2 = s2_sel.select(timeout=1)
+                    for key, mask in events2:
+                        c1_s2.service_connection(key, mask, data2)
+                        s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
+                        events2 = s2_sel.select(timeout=1)
 
-        if c1_GFD.s3:
-            events3 = s3_sel.select(timeout=1)
-            header_type = "REQ;"
-            header_message = "from client: " + str(CONN_ID) + ";"
-            messages = "" + header_type + header_message
-            if events3[0][-1] != 1:  # writing data - mask != 1
-                log("Enter a number:")
-                header_data = input()
-                messages = messages + header_data + ";"
-                messages = [bytes(messages, 'utf-8')]
-                data3 = types.SimpleNamespace(
+            if c1_GFD.s3:
+                events3 = s3_sel.select(timeout=1)
+                if events3[0][-1] != 1:  # writing data - mask != 1
+                    # messages = messages + header_data + ";"
+                    # messages = [bytes(messages, 'utf-8')]
+                    data3 = types.SimpleNamespace(
+                        connid=CONN_ID,
+                        msg_total=1024,
+                        recv_total=0,
+                        messages=list(messages),
+                        outb=b"",
+                    )
+                    for key, mask in events3:
+                        c1_s3.service_connection(key, mask, data3)
+                        s3_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
+                        events2 = s3_sel.select(timeout=1)
+                else:
+                    data3 = types.SimpleNamespace(
                     connid=CONN_ID,
                     msg_total=1024,
                     recv_total=0,
-                    messages=list(messages),
                     outb=b"",
-                )
-                for key, mask in events3:
-                    c1_s3.service_connection(key, mask, data3)
-                    s3_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
-                    events2 = s3_sel.select(timeout=1)
-            else:
-                data3 = types.SimpleNamespace(
-                connid=CONN_ID,
-                msg_total=1024,
-                recv_total=0,
-                outb=b"",
-            ) 
-                for key, mask in events3:
-                    c1_s3.service_connection(key, mask, data3)
-                    s3_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
-                    events3 = s3_sel.select(timeout=1)
+                ) 
+                    for key, mask in events3:
+                        c1_s3.service_connection(key, mask, data3)
+                        s3_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
+                        events3 = s3_sel.select(timeout=1)
         c1_s1.output = ""
         c1_s2.output = ""
         c1_s3.output = ""
@@ -331,6 +329,6 @@ try:
     
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")
-# finally:
-#     s1_sel.close()
-#     s2_sel.close()
+finally:
+    s1_sel.close()
+    s2_sel.close()
