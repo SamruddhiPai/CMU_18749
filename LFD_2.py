@@ -9,6 +9,8 @@ from util import log
 from threading import Thread
 import config
 
+server_active = 3
+
 class LFD_client(Thread):
     def __init__(self,host,port,sel):
         Thread.__init__(self)
@@ -50,12 +52,23 @@ class LFD_client(Thread):
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
     def run(self):
-        server_found = str(input("Server on. LFD on? : "))
+        #server_found = str(input("Server on. LFD on? : "))
+        global server_active
+        server_found = 'y'
         if (server_found == 'y' or server_found == 'Y'):
             self.start_connections(self.host, int(self.port))
             try:
                 while True:
-                    messages = 'Are you alive?'
+                    
+                    if server_active == 1:
+                        messages = 'LFD2 says I am alive and add S2'
+                    elif server_active == 0:
+                        messages = 'LFD2 says I am alive and delete S2'
+                    else:
+                        messages = 'LFD2 says I am alive'
+                    
+                    server_active = 3
+                    
                     messages = [bytes(messages, 'utf-8')]
                     data = types.SimpleNamespace(
                         connid=CONN_ID,
@@ -96,42 +109,37 @@ class LFD_server(Thread):
         self.sel.register(conn, events, data=data)
 
     def service_connection(self, key, mask):
+        global server_active
         sock = key.fileobj
         data = key.data
         if mask & selectors.EVENT_READ:
             try:
-                recv_data = sock.recv(1024)  # Should be ready to read
-                if recv_data:
-                    recv_data_str = str(recv_data)
-                    datalist = recv_data_str.split(";")
-                    try:
-                        req_type = datalist[0]
-                        req_message = datalist[1]
-                        req_str = "REQ: " + str(repr(datalist))
-                        log(req_str)
-                        num = datalist[2]
-                        log(update)
-                        print("------")
-                        data.outb = b'Acknowledgement'
-                        print('Updated data.outb')
-                        
-                    except:
-                        if (str(recv_data_str) == "b'I am a server and I am up.'"):
-                            server_found = True
-                            log("Server detected")
-                            data.outb = b'Server detected.'
-                            time.sleep(heart_beat)
+                try:
+                    recv_data = sock.recv(1024)  # Should be ready to read
+                except:
+                    recv_data = None
+                if recv_data:  
+                    if (str(recv_data) == "b'I am a server and I am up.'"):
+                        server_found = True
+                        server_active = 1
+                        log("Server detected")
+                        data.outb = b'Server detected.'
+                        time.sleep(heart_beat)
 
                 else:
                     log(("Closing connection to " + str(data.addr)))
                     self.sel.unregister(sock)
                     sock.close()
-            except:
+                    server_active = 0
+                    print("listening on", (self.host, self.port))
+                    
+            except KeyboardInterrupt:
                 log("No response from server.")
-        if mask & selectors.EVENT_WRITE:
-            if data.outb:
-                sent = sock.send(data.outb)  # Should be ready to write
-                data.outb = data.outb[sent:] #to clear data.outb
+
+        #if mask & selectors.EVENT_WRITE:
+            #if data.outb:
+                #sent = sock.send(data.outb)  # Should be ready to write
+                #data.outb = data.outb[sent:] #to clear data.outb
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -153,29 +161,27 @@ class LFD_server(Thread):
                         self.service_connection(key, mask)
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
-        finally:
-            self.sel.close()
-
-
+        #finally:
+            #self.sel.close()
     
 
 server_found = False
 
-heart_beat = float(input('\n\nEnter heart beat frequency (in seconds): '))
+heart_beat = float(input('\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
-CONN_ID = 20
+CONN_ID = 10
 sel_server = selectors.DefaultSelector()
 host_s, port_s, num_conns = config.lfd_2_ip, config.lfd_2_listen, 1
 lfd_server = LFD_server(host_s, port_s, sel_server)
 lfd_server.start()
 
 # LFD AS CLIENT
-# heart_beat = None
-# CONN_ID = 10
-# sel_client = selectors.DefaultSelector()
-# host_c, port_c, num_conns = '127.0.0.1', 1234, 1
+#heart_beat = 1
+CONN_ID = 10
+sel_client = selectors.DefaultSelector()
+host_c, port_c, num_conns = config.gfd_ip, config.gfd_listen, 1
 
-# lfd_client = LFD_client(host_c, port_c, sel_client)
-# lfd_client.start()
+lfd_client = LFD_client(host_c, port_c, sel_client)
+lfd_client.start()
 
