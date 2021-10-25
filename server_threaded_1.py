@@ -58,6 +58,8 @@ class Server_as_Server(Thread):
                 log(("Closing connection to " + str(data.addr)))
                 self.sel.unregister(sock)
                 sock.close()
+                print("listening on", (self.host, self.port))
+                    
         if mask & selectors.EVENT_WRITE:
             if data.outb:
                 sent = sock.send(data.outb)  # Should be ready to write
@@ -160,11 +162,11 @@ class Server_as_Client(Thread):
 connid = 1
 
 # host_s, port_s = '127.0.0.1', 1234
-host_s, port_s = config.server_1_ip, config.server_1_listen
-sel_server = selectors.DefaultSelector()
-X = 0
-server_as_server = Server_as_Server(host_s, port_s, sel_server)
-server_as_server.start()
+# host_s, port_s = config.server_1_ip, config.server_1_listen
+# sel_server = selectors.DefaultSelector()
+# X = 0
+# server_as_server = Server_as_Server(host_s, port_s, sel_server)
+# server_as_server.start()
 
 
 CONN_ID = 10
