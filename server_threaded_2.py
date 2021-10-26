@@ -171,7 +171,7 @@ server_as_server.start()
 
 CONN_ID = 10
 # host_c, port_c = '127.0.0.1', 1235
-host_c, port_c = config.server_1_ip, config.server_1_sendto
+host_c, port_c = config.server_2_ip, config.server_2_sendto
 sel_client = selectors.DefaultSelector()
 server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()

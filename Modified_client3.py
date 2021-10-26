@@ -8,7 +8,7 @@ import time
 from util import log
 import config
 
-CONN_ID = 1
+CONN_ID = 3
 s1_sel = selectors.DefaultSelector()
 s2_sel = selectors.DefaultSelector()
 s3_sel = selectors.DefaultSelector()
@@ -16,9 +16,9 @@ GFD_sel = selectors.DefaultSelector()
 num_conns = CONN_ID
 host1, port1 = config.server_1_ip,config.server_1_listen
 # host2, port2 = '172.26.78.32',14064
-host2, port2 = config.server_1_ip,config.server_1_listen
+host2, port2 = config.server_2_ip,config.server_2_listen
 
-host3, port3 = config.server_1_ip,config.server_1_listen
+host3, port3 = config.server_3_ip,config.server_3_listen
 
 host, port = config.gfd_ip, config.gfd_listen
 
@@ -257,3 +257,4 @@ except KeyboardInterrupt:
 finally:
     s1_sel.close()
     s2_sel.close()
+    s3_sel.close()

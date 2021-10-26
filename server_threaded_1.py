@@ -152,7 +152,7 @@ class Server_as_Client(Thread):
                         self.service_connection(key, mask, data)
 
         except IOError as e:
-            close_message = "Server got disconnected"
+            close_message = "GFD got disconnected"
             log(close_message)
                 
         except KeyboardInterrupt:
@@ -162,11 +162,11 @@ class Server_as_Client(Thread):
 connid = 1
 
 # host_s, port_s = '127.0.0.1', 1234
-# host_s, port_s = config.server_1_ip, config.server_1_listen
-# sel_server = selectors.DefaultSelector()
-# X = 0
-# server_as_server = Server_as_Server(host_s, port_s, sel_server)
-# server_as_server.start()
+host_s, port_s = config.server_1_ip, config.server_1_listen
+sel_server = selectors.DefaultSelector()
+X = 0
+server_as_server = Server_as_Server(host_s, port_s, sel_server)
+server_as_server.start()
 
 
 CONN_ID = 10

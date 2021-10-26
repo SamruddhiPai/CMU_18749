@@ -8,7 +8,7 @@ import time
 import config
 from util import log
 
-CONN_ID = 1
+CONN_ID = 2
 s1_sel = selectors.DefaultSelector()
 s2_sel = selectors.DefaultSelector()
 s3_sel = selectors.DefaultSelector()
@@ -267,3 +267,4 @@ except KeyboardInterrupt:
 finally:
     s1_sel.close()
     s2_sel.close()
+    s3_sel.close()

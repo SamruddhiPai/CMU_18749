@@ -131,6 +131,7 @@ class LFD_server(Thread):
                     self.sel.unregister(sock)
                     sock.close()
                     server_active = 0
+                    print('server active?', server_active)
                     print("listening on", (self.host, self.port))
                     
             except KeyboardInterrupt:
