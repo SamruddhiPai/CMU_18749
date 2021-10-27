@@ -105,9 +105,9 @@ class GFD:
                     self.s2 = 0
                 if "S3" not in recv_data_str:
                     self.s3 = 0
-                print(self.s1)
-                print(self.s2)
-                print(self.s3)
+                # print(self.s1)
+                # print(self.s2)
+                # print(self.s3)
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
@@ -159,18 +159,18 @@ c2_s3.start_connections()
 
 try: 
     while True:
+        log("Enter a number:")
+        header_data = input()
         c2_GFD.run()
         header_type = "REQ;"
         header_message = "from client: " + str(CONN_ID) + ";"
         messages = "" + header_type + header_message
-        log("Enter a number:")
-        header_data = input()
         messages = messages + header_data + ";"
         messages = [bytes(messages, 'utf-8')]
         for i in range(2):
             if c2_GFD.s1:
                 events1 = s1_sel.select(timeout=1)
-                print("Events1: ", events1)
+                # print("Events1: ", events1)
                 # header_type = "REQ;"
                 # header_message = "from client: " + str(CONN_ID) + ";"
                 # messages = "" + header_type + header_message
