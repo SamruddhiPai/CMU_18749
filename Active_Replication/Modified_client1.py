@@ -159,12 +159,12 @@ c1_s3.start_connections()
 
 try: 
     while True:
+        log("Enter a number:")
+        header_data = input()
         c1_GFD.run()
         header_type = "REQ;"
         header_message = "from client: " + str(CONN_ID) + ";"
         messages = "" + header_type + header_message
-        log("Enter a number:")
-        header_data = input()
         messages = messages + header_data + ";"
         messages = [bytes(messages, 'utf-8')]
         for i in range(2):
