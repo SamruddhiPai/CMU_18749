@@ -10,7 +10,7 @@ from util import log
 from threading import Thread
 import config
 
-CHECK_POINT_FREQ = 10 #sends a checkpoint every 10 seconds
+CHECK_POINT_FREQ = 5 #sends a checkpoint every 10 seconds
 CHECK_POIN_NUM = 0
 
 class Server_as_Server(Thread):
@@ -64,7 +64,6 @@ class Server_as_Server(Thread):
                 print("listening on", (self.host, self.port))
                     
         if mask & selectors.EVENT_WRITE:
-            data.outb = ''
             if data.outb:
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:] #to clear data.outb
@@ -169,8 +168,8 @@ class Server_as_Primary_Replica(Thread):
         self.host = host
         self.port1 = port1
         self.sel1 = sel1
-        #self.port2 = port2
-        #self.sel2 = sel2
+        self.port2 = port2
+        self.sel2 = sel2
 
     def accept_wrapper(self, sock, sel):
         conn, addr = sock.accept()  # Should be ready to read
@@ -179,91 +178,67 @@ class Server_as_Primary_Replica(Thread):
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
         sel.register(conn, events, data=data)
 
-    def service_connection(self, key, mask):
+    def service_connection(self, key, mask, sel):
+        print('Service Connection!!!!!!!!!!')
         global X
         global CHECK_POIN_NUM
         sock = key.fileobj
         data = key.data
-        # original_X = X
-        # if mask & selectors.EVENT_READ:
-        #     recv_data = sock.recv(1024)  # Should be ready to read
-        #     if recv_data:
-        #         recv_data_str = str(recv_data)
-        #         datalist = recv_data_str.split(";")
-        #         try:
-        #             req_type = datalist[0]
-        #             req_message = datalist[1]
-        #             req_str = "REQ: " + str(repr(datalist))
-        #             log(req_str)
-        #             num = datalist[2]
-        #             X += int(num)
-        #             update = "X = " + str(original_X) + " ---> " + "X = " + str(X)
-        #             log(update)
-        #             print("------")
-        #             data.outb = b'Acknowledgement'
-        #             print('Updated data.outb')
-                    
-        #         except:
-        #             if (str(recv_data_str) == "b'Are you alive?'"):
-        #                 data.outb = b'I am alive!'
-        #     else:
-        #         log(("Closing connection to " + str(data.addr)))
-        #         sel.unregister(sock)
-        #         sock.close()
-        #         print("listening on", (self.host, self.port))
                     
         if mask & selectors.EVENT_WRITE:
             state = X
-            CHECK_POIN_NUM += 1
-            checkpoint_msg = 'X=' + str(state) + ';C_N =' + str(CHECK_POIN_NUM)
-            data.outb = [bytes(checkpoint_msg, 'utf-8')]
-            sent = sock.send(data.outb)  # Should be ready to write
-            data.outb = data.outb[sent:] #to clear data.outb
+            checkpoint_msg = str(state) + ';' + str(CHECK_POIN_NUM)
+            data.outb = bytes(checkpoint_msg, 'utf-8')
+            try:
+                sent = sock.send(data.outb)  # Should be ready to write
+                data.outb = data.outb[sent:] #to clear data.outb
+            except:
+                log(("Closing connection to " + str(data.addr)))
+                sel.unregister(sock)
+                sock.close()
+
         
     def run(self):
+        global CHECK_POIN_NUM
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
         print("listening on", (self.host, self.port1))
         lsock1.setblocking(False)
-        self.sel1.register(lsock1, selectors.EVENT_WRITE, data=None)
+        self.sel1.register(lsock1, selectors.EVENT_WRITE | selectors.EVENT_READ , data=None)
 
-        #lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #lsock2.bind((self.host, self.port2))
-        #lsock2.listen()
-        #print("listening on", (self.host, self.port2))
-        #lsock2.setblocking(False)
-        #self.sel2.register(lsock2, selectors.EVENT_WRITE, data=None)
-        
-        print("X = " + str(X))
-        print("------")
+        lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock2.bind((self.host, self.port2))
+        lsock2.listen()
+        print("listening on", (self.host, self.port2))
+        lsock2.setblocking(False)
+        self.sel2.register(lsock2, selectors.EVENT_WRITE | selectors.EVENT_READ, data=None)
 
         try:
             while True:
                 events1 = self.sel1.select(timeout=None) # Blocks until client ready for I/O, in effect till client sends data
-                # print(events)
                 for key, mask in events1:
                     if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                         self.accept_wrapper(key.fileobj, self.sel1)
                     else:
-                        self.service_connection(key, mask)
+                        self.service_connection(key, mask, self.sel1)
                         print("Checkpoint Sent to Backup Replica Server 2")
 
-                #events2 = self.sel2.select(timeout=None)
-                #for key, mask in events2:
-                    #if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
-                        #self.accept_wrapper(key.fileobj, self.sel2)
-                    #else:
-                        #self.service_connection(key, mask)
-                        #print("Checkpoint Sent to Backup Replica Server 3")
-                
+                events2 = self.sel2.select(timeout=None)
+                for key, mask in events2:
+                    if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
+                        self.accept_wrapper(key.fileobj, self.sel2)
+                    else:
+                        self.service_connection(key, mask, self.sel2)
+                        print("Checkpoint Sent to Backup Replica Server 3")
+                CHECK_POIN_NUM += 1
                 time.sleep(CHECK_POINT_FREQ)
 
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
         finally:
             self.sel1.close()
-            #self.sel2.close()
+            self.sel2.close()
 
 connid = 1
 
