@@ -197,6 +197,8 @@ try:
                         c3_s1.service_connection(key, mask, data1)
                         s1_sel.modify(key.fileobj, selectors.EVENT_READ|selectors.EVENT_WRITE, data=None)
                         events1 = s1_sel.select(timeout=1)
+
+            '''
             if c3_GFD.s2:
                 events2 = s2_sel.select(timeout=1)
                 if events2[0][-1] != 1:  # writing data - mask != 1
@@ -248,9 +250,10 @@ try:
                         c3_s3.service_connection(key, mask, data3)
                         s3_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
                         events3 = s3_sel.select(timeout=1)
-        c3_s1.output = ""
         c3_s2.output = ""
         c3_s3.output = ""
+        '''
+        c3_s1.output = ""
     
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")
