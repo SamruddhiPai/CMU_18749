@@ -63,7 +63,7 @@ def service_connection(key, mask):
                 membership.discard("S3")
                 data.outb = b"Remove S3"
             if len(membership) == 0:
-                update = "High Alert! All server replicas dead!"
+                update = "GFD: 0 members"
             else:
                 update = "GFD: " + str(len(membership)) + " members:" + str(membership)
             log(update)
