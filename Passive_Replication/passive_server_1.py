@@ -8,7 +8,7 @@ import types
 import time
 from util import log
 from threading import Thread
-import config_passive as config
+import config
 
 CHECK_POINT_FREQ = 10 #sends a checkpoint every 10 seconds
 CHECK_POIN_NUM = 0
