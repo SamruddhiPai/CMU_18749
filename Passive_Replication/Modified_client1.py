@@ -151,7 +151,7 @@ class GFD:
 
 c1_s1 = Client(host1,port1,s1_sel, "S1")
 c1_s2 = Client(host2,port2,s2_sel, "S2")
-c1_s3 = Client(host2,port3,s3_sel, "S3")
+c1_s3 = Client(host3,port3,s3_sel, "S3")
 c1_GFD = GFD(host, port, GFD_sel)
 c1_s1.start_connections()
 c1_s2.start_connections()
