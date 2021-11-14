@@ -185,8 +185,8 @@ class Server_as_Client_to_Primary(Thread):
                 recv_data_str = recv_data.decode("utf-8")
                 print(recv_data_str)
                 datalist = recv_data_str.split(';')
-                log('Current State: ', datalist[0])
-                log('Checkpoint Value: ', datalist[1])
+                log('Current State: '+ str(datalist[0]))
+                log('Checkpoint Value: ' + str(datalist[1]))
                 receive_str = "Received status (X) from from Primary Server as " + datalist[0] + " and check point number is "+ datalist[1]
                 log(receive_str)
                 X = int(datalist[0])
