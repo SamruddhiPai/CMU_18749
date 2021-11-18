@@ -17,9 +17,10 @@ def accept_wrapper(sock):
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
     #events = selectors.EVENT_READ
     sel.register(conn, events, data=data)
-
+mem_version = 0
 membership = set()
 def service_connection(key, mask):
+    global mem_version
     sock = key.fileobj
     data = key.data
     if mask & selectors.EVENT_READ:
@@ -28,9 +29,11 @@ def service_connection(key, mask):
         except:
             recv_data = None
         recv_data_str = str(recv_data)
+        
         datalist = recv_data_str.split(";")
         if recv_data:
             print(recv_data)
+            l1 = len(membership)
             if recv_data == b'Send me the Status':
                 s = "+"
                 if "S1" in membership:
@@ -45,27 +48,37 @@ def service_connection(key, mask):
             datalist = recv_data_str.split(";")
             add_members = recv_data_str
             if "S1" in add_members and "add" in add_members:
+                
                 membership.add("S1")
                 data.outb = b"Add S1"
             elif "S1" in add_members and "delete" in add_members:
+                
                 membership.discard("S1")
                 data.outb = b"Remove S1"
             if "S2" in add_members and "add" in add_members:
+                
                 membership.add("S2")
                 data.outb = b"Add S2"
             elif "S2" in add_members and "delete" in add_members:
+                
                 membership.discard("S2")
                 data.outb = b"Remove S2"
             if "S3" in add_members and "add" in add_members:
+                
                 membership.add("S3")
                 data.outb = b"Add S3"
             elif "S3" in add_members and "delete" in add_members:
+                
                 membership.discard("S3")
                 data.outb = b"Remove S3"
+            l2 = len(membership)
+            if l1 is not l2:
+                mem_version += 1
+
             if len(membership) == 0:
-                update = "GFD: 0 members"
+                update = "GFD: 0 members | membership version: " + str(mem_version)
             else:
-                update = "GFD: " + str(len(membership)) + " members:" + str(membership)
+                update = "GFD: " + str(len(membership)) + " members:" + str(membership) + " | membership version: " + str(mem_version)
             log(update)
             print("---------------------------------")
                 # data.outb = b'Acknowledgement'

@@ -10,7 +10,7 @@ from threading import Thread
 import config
 
 server_active = 3
-
+heart_beat_id_cl = 0
 class LFD_client(Thread):
     def __init__(self,host,port,sel):
         Thread.__init__(self)
@@ -53,6 +53,7 @@ class LFD_client(Thread):
                 data.outb = data.outb[sent:]
     def run(self):
         #server_found = str(input("Server on. LFD on? : "))
+        global heart_beat_id_cl
         global server_active
         server_found = 'y'
         if (server_found == 'y' or server_found == 'Y'):
@@ -66,7 +67,8 @@ class LFD_client(Thread):
                         messages = 'LFD2 says I am alive and delete S2'
                     else:
                         messages = 'LFD2 says I am alive'
-                    
+                    heart_beat_id_cl += 1
+                    messages += " | heartbeat_id: " + str(heart_beat_id_cl)
                     server_active = 3
                     
                     messages = [bytes(messages, 'utf-8')]
