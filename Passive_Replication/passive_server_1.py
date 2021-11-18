@@ -94,8 +94,6 @@ class Server_as_Server(Thread):
             self.sel.close()
 
 
-
-
 class Server_as_Client(Thread):
     def __init__(self, host, port, sel):
         Thread.__init__(self)
@@ -161,7 +159,6 @@ class Server_as_Client(Thread):
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
 
-
 class Server_as_Primary_Replica(Thread):
     def __init__(self, host, port1, port2, sel1, sel2):
         Thread.__init__(self)
@@ -179,7 +176,6 @@ class Server_as_Primary_Replica(Thread):
         sel.register(conn, events, data=data)
 
     def service_connection(self, key, mask, sel):
-        print('Service Connection!!!!!!!!!!')
         global X
         global CHECK_POIN_NUM
         sock = key.fileobj
@@ -216,7 +212,7 @@ class Server_as_Primary_Replica(Thread):
 
         try:
             while True:
-                events1 = self.sel1.select(timeout=None) # Blocks until client ready for I/O, in effect till client sends data
+                events1 = self.sel1.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
                 for key, mask in events1:
                     if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                         self.accept_wrapper(key.fileobj, self.sel1)
@@ -224,7 +220,7 @@ class Server_as_Primary_Replica(Thread):
                         self.service_connection(key, mask, self.sel1)
                         print("Checkpoint Sent to Backup Replica Server 2")
 
-                events2 = self.sel2.select(timeout=None)
+                events2 = self.sel2.select(timeout=0.5)
                 for key, mask in events2:
                     if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                         self.accept_wrapper(key.fileobj, self.sel2)
@@ -239,7 +235,6 @@ class Server_as_Primary_Replica(Thread):
         finally:
             self.sel1.close()
             self.sel2.close()
-
 connid = 1
 
 # host_s, port_s = '127.0.0.1', 1234
@@ -259,10 +254,8 @@ server_as_client.start()
 
 # Establishing Connection to replica S2 and S3
 host_s, port_s2, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
-sel_server1 = selectors.DefaultSelector()
 sel_server2 = selectors.DefaultSelector()
-server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel_server1, sel_server2)
+sel_server3 = selectors.DefaultSelector()
+
+server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel_server2, sel_server3)
 server_as_primary_replica1.start()
-
-
-
