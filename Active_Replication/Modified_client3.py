@@ -38,8 +38,8 @@ class Client:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setblocking(False)
         self.sock.connect_ex(server_addr)
-        self.events = selectors.EVENT_READ | selectors.EVENT_WRITE
-        #events = selectors.EVENT_WRITE
+        #self.events = selectors.EVENT_READ | selectors.EVENT_WRITE
+        self.events = selectors.EVENT_WRITE
         self.sel.register(self.sock, self.events, data=None)
 
     def service_connection(self, key, mask, data):
@@ -48,7 +48,7 @@ class Client:
         if mask & selectors.EVENT_READ:
             self.recv_data = self.sock.recv(1024)  # Should be ready to read
             if self.recv_data:
-                if c3_s1.output != "" or c3_s2.output != "" or c3_s2.output != "":
+                if c1_s1.output != "" or c1_s2.output != "" or c1_s2.output != "":
                     receive_str = "Discarded Duplicate reply from " + self.replicaID
                 else:
                     receive_str = "Received " + str(repr(self.recv_data)) + " from connection " + str(data.connid)
@@ -78,6 +78,9 @@ class GFD:
         self.s1 = 1
         self.s2 = 1
         self.s3 = 1
+        self.flag1 = None
+        self.flag2 = None
+        self.flag3 = None
 
     def start_connections(self,host, port):
         server_addr = (host, port)
@@ -101,13 +104,29 @@ class GFD:
                 recv_data_str = str(repr(recv_data))
                 if "S1" not in recv_data_str:
                     self.s1 = 0
+                    self.flag1 = 0
+                else:
+                    if self.flag1 == 0:
+                        self.flag1 = 1
+                    self.s1 = 1
                 if "S2" not in recv_data_str:
                     self.s2 = 0
+                    self.flag2 = 0
+                else:
+                    self.s2 = 1
+                    if self.flag2 == 0:
+                        self.flag2 = 1
                 if "S3" not in recv_data_str:
                     self.s3 = 0
-                print(self.s1)
-                print(self.s2)
-                print(self.s3)
+                    self.flag3 = 0
+                else:
+                    if self.flag3 == 0:
+                        self.flag3 = 1
+                    self.s3 = 1
+
+                # print(self.s1)
+                # print(self.s2)
+                # print(self.s3)
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
@@ -123,7 +142,6 @@ class GFD:
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
     def run(self):
-        self.start_connections(self.host, int(self.port))
         try:
             for i in range(3):
                 messages = 'Send me the Status'
@@ -149,28 +167,38 @@ class GFD:
             print("caught keyboard interrupt, exiting")
 # if __name__=='main':
 
-c3_s1 = Client(host1,port1,s1_sel, "S1")
-c3_s2 = Client(host2,port2,s2_sel, "S2")
-c3_s3 = Client(host2,port3,s3_sel, "S3")
-c3_GFD = GFD(host, port, GFD_sel)
-c3_s1.start_connections()
-c3_s2.start_connections()
-c3_s3.start_connections()
+c1_s1 = Client(host1,port1,s1_sel, "S1")
+c1_s2 = Client(host2,port2,s2_sel, "S2")
+c1_s3 = Client(host2,port3,s3_sel, "S3")
+c1_GFD = GFD(host, port, GFD_sel)
+c1_s1.start_connections()
+c1_s2.start_connections()
+c1_s3.start_connections()
+c1_GFD.start_connections(host, int(port))
 
 try: 
     while True:
         log("Enter a number:")
         header_data = input()
-        c3_GFD.run()
+        c1_GFD.run()
         header_type = "REQ;"
         header_message = "from client: " + str(CONN_ID) + ";"
         messages = "" + header_type + header_message
         messages = messages + header_data + ";"
         messages = [bytes(messages, 'utf-8')]
         for i in range(2):
-            if c3_GFD.s1:
+            if c1_GFD.s1:
+                # events1 = s1_sel.select(timeout=1)
+                # print('Events 1', events1)
+                if c1_GFD.flag1 == 1:
+                    print("Flag 1 GFD!!!!!!!!!!!!!!")
+                    s1_sel.close()
+                    s1_sel = selectors.DefaultSelector()
+                    c1_s1 = Client(host1,port1,s1_sel, "S1")
+                    c1_s1.start_connections()   
+                    c1_GFD.flag1 = None
                 events1 = s1_sel.select(timeout=1)
-                print("Events1: ", events1)
+                print('Events 1', events1)
                 if events1[0][-1] != 1:  # writing data - mask != 1
                     data1 = types.SimpleNamespace(
                         connid=CONN_ID,
@@ -181,7 +209,7 @@ try:
                     )
                     for key, mask in events1:
                         # print('Event1 before\n',events1)
-                        c3_s1.service_connection(key, mask, data1)
+                        c1_s1.service_connection(key, mask, data1)
                         s1_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
                         events1 = s1_sel.select(timeout=1)
                 else:
@@ -194,12 +222,25 @@ try:
                     ) 
                     for key, mask in events1:
                         # print('Event1 before\n',events1)
-                        c3_s1.service_connection(key, mask, data1)
-                        s1_sel.modify(key.fileobj, selectors.EVENT_READ|selectors.EVENT_WRITE, data=None)
+                        c1_s1.service_connection(key, mask, data1)
+                        #s1_sel.modify(key.fileobj, selectors.EVENT_READ|selectors.EVENT_WRITE, data=None)
+                        s1_sel.modify(key.fileobj, selectors.EVENT_WRITE , data=None)
                         events1 = s1_sel.select(timeout=1)
-            if c3_GFD.s2:
+            if c1_GFD.s2:
+                # events2 = s2_sel.select(timeout=1)
+                # print('Events2', events2)
+                if c1_GFD.flag2 == 1:
+                    print("Flag 2 GFD!!!!!!!!!!!!!!")
+                    s2_sel.close()
+                    s2_sel = selectors.DefaultSelector()
+                    c1_s2 = Client(host2,port2,s2_sel, "S2")
+                    c1_s2.start_connections()
+                    c1_GFD.flag2 = None
                 events2 = s2_sel.select(timeout=1)
+                print('Events2', events2)
                 if events2[0][-1] != 1:  # writing data - mask != 1
+                    # messages = messages + header_data + ";"
+                    # messages = [bytes(messages, 'utf-8')]
                     data2 = types.SimpleNamespace(
                         connid=CONN_ID,
                         msg_total=1024,
@@ -208,7 +249,7 @@ try:
                         outb=b"",
                     )
                     for key, mask in events2:
-                        c3_s2.service_connection(key, mask, data2)
+                        c1_s2.service_connection(key, mask, data2)
                         s2_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
                         events2 = s2_sel.select(timeout=1)
                 else:
@@ -219,13 +260,25 @@ try:
                     outb=b"",
                 ) 
                     for key, mask in events2:
-                        c3_s2.service_connection(key, mask, data2)
-                        s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
+                        c1_s2.service_connection(key, mask, data2)
+                        #s2_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
+                        s2_sel.modify(key.fileobj, selectors.EVENT_WRITE , data=None)
                         events2 = s2_sel.select(timeout=1)
 
-            if c3_GFD.s3:
+            if c1_GFD.s3:
+                # events3 = s3_sel.select(timeout=1)
+                if c1_GFD.flag3 == 1:
+                    print("Flag 3 GFD!!!!!!!!!!!!!!")
+                    s3_sel.close()
+                    s3_sel = selectors.DefaultSelector()
+                    c1_s3 = Client(host2,port3,s3_sel, "S3")
+                    c1_s3.start_connections()
+                    c1_GFD.flag3 = None
                 events3 = s3_sel.select(timeout=1)
+                print('Events3', events3)
                 if events3[0][-1] != 1:  # writing data - mask != 1
+                    # messages = messages + header_data + ";"
+                    # messages = [bytes(messages, 'utf-8')]
                     data3 = types.SimpleNamespace(
                         connid=CONN_ID,
                         msg_total=1024,
@@ -234,7 +287,7 @@ try:
                         outb=b"",
                     )
                     for key, mask in events3:
-                        c3_s3.service_connection(key, mask, data3)
+                        c1_s3.service_connection(key, mask, data3)
                         s3_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
                         events2 = s3_sel.select(timeout=1)
                 else:
@@ -245,12 +298,13 @@ try:
                     outb=b"",
                 ) 
                     for key, mask in events3:
-                        c3_s3.service_connection(key, mask, data3)
-                        s3_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
+                        c1_s3.service_connection(key, mask, data3)
+                        #s3_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
+                        s3_sel.modify(key.fileobj, selectors.EVENT_WRITE , data=None)
                         events3 = s3_sel.select(timeout=1)
-        c3_s1.output = ""
-        c3_s2.output = ""
-        c3_s3.output = ""
+        c1_s1.output = ""
+        c1_s2.output = ""
+        c1_s3.output = ""
     
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")
