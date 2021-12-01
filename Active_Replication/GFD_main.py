@@ -137,22 +137,22 @@ class GFD_server(Thread):
                 add_members = recv_data_str
                 if "S1" in add_members and "add" in add_members:
                     self.membership.add("S1")
-                    data.outb = b"Add S1"
+                    data.outb = bytes("Add S1 | Mem: {0}".format(str(membership_view)),'utf-8')
                 elif "S1" in add_members and "delete" in add_members:
                     self.membership.discard("S1")
-                    data.outb = b"Remove S1"
+                    data.outb = bytes("Remove S1 | Mem: {0}".format(str(membership_view)),'utf-8')
                 if "S2" in add_members and "add" in add_members:
                     self.membership.add("S2")
-                    data.outb = b"Add S2"
+                    data.outb = bytes("Add S2 | Mem: {0}".format(str(membership_view)), 'utf-8')
                 elif "S2" in add_members and "delete" in add_members:
                     self.membership.discard("S2")
-                    data.outb = b"Remove S2"
+                    data.outb = bytes("Remove S2 | Mem: {0}".format(str(membership_view)),'utf-8')
                 if "S3" in add_members and "add" in add_members:
                     self.membership.add("S3")
-                    data.outb = b"Add S3"
+                    data.outb = bytes("Add S3 | Mem: {0}".format(str(membership_view)),'utf-8')
                 elif "S3" in add_members and "delete" in add_members:
                     self.membership.discard("S3")
-                    data.outb = b"Remove S3"
+                    data.outb = bytes("Remove S3 | Mem: {0}".format(str(membership_view)),'utf-8')
                 if len(self.membership) == 0:
                     update = "GFD: 0 members"
                 else:
@@ -175,6 +175,7 @@ class GFD_server(Thread):
                 
         if mask & selectors.EVENT_WRITE:
             if data.outb:
+                # data.outb += b"Mem: " + str(membership_view)
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:] #to clear data.outb
     
@@ -213,7 +214,7 @@ gfd_server.start()
 
 server_found = False
 
-heart_beat = float(input('\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2#float(input('\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
 # CONN_ID = 10

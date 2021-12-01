@@ -36,6 +36,8 @@ class LFD_client(Thread):
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from Server"
+                mem = str(receive_str.split("{,}"))
+                log(str(mem))
                 log(receive_str)
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
@@ -170,7 +172,7 @@ class LFD_server(Thread):
 
 server_found = False
 
-heart_beat = float(input('\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2#float(input('\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
 CONN_ID = 10
