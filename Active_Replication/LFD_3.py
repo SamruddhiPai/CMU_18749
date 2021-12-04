@@ -166,7 +166,7 @@ class LFD_server(Thread):
 
 server_found = False
 
-heart_beat = float(input('\n\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2#float(input('\n\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
 CONN_ID = 10

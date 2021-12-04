@@ -1,7 +1,9 @@
 
-osascript -e 'tell app "Terminal"
-    do script "cd /Users/riturajsingh/BigFolder/courses/2_18749_Reliable_DS/CMU_18749 && python3 client1.py"
-    do script "cd /Users/riturajsingh/BigFolder/courses/2_18749_Reliable_DS/CMU_18749 && python3 client2.py"
-    do script "cd /Users/riturajsingh/BigFolder/courses/2_18749_Reliable_DS/CMU_18749 && python3 client3.py"
-    do script "cd /Users/riturajsingh/BigFolder/courses/2_18749_Reliable_DS/CMU_18749 && python3 status.py"
-end tell'
+#! /bin/sh
+$ cd C:\Users\Saurabh - CMU\Documents\GitHub\CMU_18749\Active_Replication ; py LFD_1.py
+$ cd C:\Users\Saurabh - CMU\Documents\GitHub\CMU_18749\Active_Replication ; py LFD_2.py
+$ cd C:\Users\Saurabh - CMU\Documents\GitHub\CMU_18749\Active_Replication ; py LFD_3.py
+$ cd C:\Users\Saurabh - CMU\Documents\GitHub\CMU_18749\Active_Replication ; py server_threaded_1.py
+$ cd C:\Users\Saurabh - CMU\Documents\GitHub\CMU_18749\Active_Replication ; py server_threaded_2.py
+$ cd C:\Users\Saurabh - CMU\Documents\GitHub\CMU_18749\Active_Replication ; py server_threaded_3.py
+
