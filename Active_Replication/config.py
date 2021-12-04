@@ -1,3 +1,5 @@
+localhost = "127.0.0.1"
+
 #GFD
 gfd_ip = "10.0.0.166"
 gfd_listen = 1285
@@ -38,3 +40,5 @@ lfd_3_sendto = gfd_listen
 
 #############################################
 
+rm_ip = localhost
+rm_listen = 1289
