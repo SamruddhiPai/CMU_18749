@@ -53,7 +53,7 @@ class Server_as_Server(Thread):
                     log(update)
                     print("------")
                     data.outb = b'Acknowledgement'
-                    print('Updated data.outb')
+                    #print('Updated data.outb')
                     
                 except:
                     if (str(recv_data_str) == "b'Are you alive?'"):
@@ -166,6 +166,73 @@ class Server_as_Client(Thread):
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
 
+class Server_as_Client_to_Primary(Thread):
+    def __init__(self, host, port, sel):
+        Thread.__init__(self)
+        self.host = host
+        self.port = port
+        self.sel = sel
+
+    def start_connections(self,host, port):
+        server_addr = (host, port)
+        print("Starting connection", connid, "to", server_addr)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setblocking(False)
+        sock.connect_ex(server_addr)
+        events = selectors.EVENT_READ | selectors.EVENT_WRITE
+        # events = selectors.EVENT_WRITE
+        self.sel.register(sock, events, data=None)
+    
+    def service_connection(self,key, mask, data):
+        sock = key.fileobj
+        #data = key.data
+        if mask & selectors.EVENT_READ:
+            recv_data = sock.recv(1024)  # Should be ready to read
+            print(str(recv_data))
+            if recv_data:
+                recv_data_str = recv_data.decode("utf-8")
+                print(recv_data_str)
+                datalist = recv_data_str.split(';')
+                log('Current State: '+ str(datalist[0]))
+                log('Checkpoint Value: ' + str(datalist[1]))
+                receive_str = "Received status (X) from from Primary Server as " + datalist[0] + " and check point number is "+ datalist[1]
+                log(receive_str)
+                X = int(datalist[0])
+                checkpoint_counter = int(datalist[1])
+                # checkpoint_msg = "Checkpoint counter on server 2 is updated to " + str(checkpoint_counter)
+                # print('-----Received X-----')
+                # log(str(X))
+                # print('-----Received checkpoint is------')
+                # log(str(checkpoint_msg))
+
+                data.recv_total += len(recv_data)
+            if not recv_data or data.recv_total == data.msg_total:
+                close_message = "Closing Connection " + str(data.connid)
+                log(close_message)
+                self.sel.unregister(sock)
+
+    def run(self):
+        self.start_connections(self.host, int(self.port))
+        try:
+            while True:
+                data = types.SimpleNamespace(
+                    connid=CONN_ID,
+                    msg_total=1024,
+                    recv_total=0,
+                    outb=b"",
+                )
+                events = self.sel.select(timeout=1)
+                if events:
+                    for key, mask in events:
+                        self.service_connection(key, mask, data)
+
+        except IOError as e:
+            close_message = "Server got disconnected"
+            log(close_message)
+                
+        except KeyboardInterrupt:
+            print("caught keyboard interrupt, exiting")
+
 class Server_as_Primary_Replica(Thread):
     
     def __init__(self, host , port1, port2, sel1, sel2):
@@ -214,6 +281,7 @@ class Server_as_Primary_Replica(Thread):
         print("listening on", (self.host, self.port1))
         lsock1.setblocking(False)
         self.sel1.register(lsock1, selectors.EVENT_WRITE | selectors.EVENT_READ , data=None)
+        set_S2 = True
 
         lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock2.bind((self.host, self.port2))
@@ -221,50 +289,43 @@ class Server_as_Primary_Replica(Thread):
         print("listening on", (self.host, self.port2))
         lsock2.setblocking(False)
         self.sel2.register(lsock2, selectors.EVENT_WRITE | selectors.EVENT_READ, data=None)
+        set_S3 = True
 
         try:
             while True:
                 events1 = self.sel1.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
-                print(events1)
-                print("glob_mem",glob_mem)
-                print("prev_mem",prev_mem)
                 if glob_mem != prev_mem:
                     if ('S2' in glob_mem and 'S2' not in prev_mem):
                         
                         for key, mask in events1:
                             if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                                 self.accept_wrapper(key.fileobj, self.sel1)
-                                log("if hagggguuuuuuu2")
                             else:
-                                log("else hagggguuuuuuu2")
                                 self.service_connection(key, mask, self.sel1)
                                 print("Checkpoint Sent to Backup Replica Server 2")
                                 CHECK_POIN_NUM += 1
                                 time.sleep(CHECK_POINT_FREQ)
-                                # if glob_mem != prev_mem:
                                 prev_mem = glob_mem
                     if ('S2' not in glob_mem and 'S2' in prev_mem):
-                        self.sel1.close()
-                        host_s, port_s2, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
-                        sel1 = selectors.DefaultSelector()
-                        sel2 = selectors.DefaultSelector()
-                        server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel1, sel2)
-                        server_as_primary_replica1.start()
+                        self.sel1.unregister(key.fileobj)
+                        key.fileobj.close()
                         prev_mem = glob_mem
 
-                events2 = self.sel2.select(timeout=0.5)
+                events2 = self.sel2.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
                 if glob_mem != prev_mem:
                     if ('S3' in glob_mem and 'S3' not in prev_mem):
-                        log("hagggguuuuuuu3")
                         for key, mask in events2:
                             if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                                 self.accept_wrapper(key.fileobj, self.sel2)
                             else:
                                 self.service_connection(key, mask, self.sel2)
-                                print("Checkpoint Sent to Backup Replica Server 3")
-                        CHECK_POIN_NUM += 1
-                        time.sleep(CHECK_POINT_FREQ)
-                        # if glob_mem != prev_mem:
+                                print("Checkpoint Sent to Backup Replica Server 2")
+                                CHECK_POIN_NUM += 1
+                                time.sleep(CHECK_POINT_FREQ)
+                                prev_mem = glob_mem
+                    if ('S3' not in glob_mem and 'S3' in prev_mem):
+                        self.sel2.unregister(key.fileobj)
+                        key.fileobj.close()
                         prev_mem = glob_mem
 
         except KeyboardInterrupt:
@@ -292,9 +353,21 @@ server_as_client.start()
 
 # Establishing Connection to replica S2 and S3
 
-host_s, port_s2, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
-sel_server2 = selectors.DefaultSelector()
+host_s, port_s1, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
+sel_server1 = selectors.DefaultSelector()
 sel_server3 = selectors.DefaultSelector()
 
-server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel_server2, sel_server3)
+server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s3, sel_server1, sel_server3)
 server_as_primary_replica1.start()
+
+# Receive checkpoint from S2 
+host_p, port_p = config.server_2_ip, config.server_2_listen_s1
+sel_client_to_p = selectors.DefaultSelector()
+server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
+server_as_client_to_p.start()
+
+# Receive checkpoint from S3
+host_p, port_p = config.server_3_ip, config.server_3_listen_s1
+sel_client_to_p = selectors.DefaultSelector()
+server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
+server_as_client_to_p.start()
