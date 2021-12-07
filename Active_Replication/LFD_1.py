@@ -11,6 +11,7 @@ import config
 
 server_active = 3
 glob_mem = ''
+
 class LFD_client(Thread):
     def __init__(self,host,port,sel):
         Thread.__init__(self)
@@ -50,7 +51,7 @@ class LFD_client(Thread):
             if not data.outb and data.messages:
                 data.outb = data.messages.pop(0)
             if data.outb:
-                send_message = "Sending " + str(repr(data.outb)) + " to Server"
+                send_message = "Sending " + str(repr(data.outb)) + " to GFD"
                 log(send_message)
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
@@ -169,11 +170,9 @@ class LFD_server(Thread):
             #self.sel.close()
 
 
-    
-
 server_found = False
 
-heart_beat = 2#float(input('\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2 #float(input('\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
 CONN_ID = 10

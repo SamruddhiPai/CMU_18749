@@ -10,6 +10,7 @@ from threading import Thread
 import config
 
 server_active = 3
+glob_mem = ''
 
 class LFD_client(Thread):
     def __init__(self,host,port,sel):
@@ -30,12 +31,15 @@ class LFD_client(Thread):
         self.sel.register(sock, events, data=None)
 
     def service_connection(self,key, mask, data):
+        global glob_mem
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from Server"
+                mem = str((receive_str.split('{')[1]).split('}')[0])
+                glob_mem = str(mem)
                 log(receive_str)
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
@@ -123,7 +127,7 @@ class LFD_server(Thread):
                         server_found = True
                         server_active = 1
                         log("Server detected")
-                        data.outb = b'Server detected.'
+                        data.outb = bytes('Server detected | Mem: {0}'.format(glob_mem),'utf-8')
                         time.sleep(heart_beat)
 
                 else:
@@ -136,10 +140,10 @@ class LFD_server(Thread):
             except KeyboardInterrupt:
                 log("No response from server.")
 
-        #if mask & selectors.EVENT_WRITE:
-            #if data.outb:
-                #sent = sock.send(data.outb)  # Should be ready to write
-                #data.outb = data.outb[sent:] #to clear data.outb
+        if mask & selectors.EVENT_WRITE:
+            if data.outb:
+                sent = sock.send(data.outb)  # Should be ready to write
+                data.outb = data.outb[sent:] #to clear data.outb
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -167,7 +171,7 @@ class LFD_server(Thread):
 
 server_found = False
 
-heart_beat = 2#float(input('\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2 #float(input('\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
 CONN_ID = 10
@@ -177,7 +181,7 @@ lfd_server = LFD_server(host_s, port_s, sel_server)
 lfd_server.start()
 
 # LFD AS CLIENT
-#heart_beat = 1
+
 CONN_ID = 10
 sel_client = selectors.DefaultSelector()
 host_c, port_c, num_conns = config.gfd_ip, config.gfd_listen, 1

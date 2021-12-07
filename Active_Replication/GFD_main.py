@@ -209,12 +209,9 @@ lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 gfd_server = GFD_server(host, port, sel_server)
 gfd_server.start()
 
-
-    
-
 server_found = False
 
-heart_beat = 2#float(input('\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2  #float(input('\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
 # CONN_ID = 10
@@ -225,7 +222,7 @@ heart_beat = 2#float(input('\nEnter heart beat frequency (in seconds): '))
 # gfd_server.start()
 
 # GFD AS CLIENT
-#heart_beat = 1
+
 CONN_ID = 10
 sel_client = selectors.DefaultSelector()
 host_c, port_c, num_conns = config.gfd_ip, config.rm_listen, 1
