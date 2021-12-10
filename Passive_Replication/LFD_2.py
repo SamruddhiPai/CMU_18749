@@ -11,6 +11,7 @@ import config
 
 server_active = 3
 heart_beat_id_cl = 0
+glob_mem = ''
 class LFD_client(Thread):
     def __init__(self,host,port,sel):
         Thread.__init__(self)
@@ -30,12 +31,15 @@ class LFD_client(Thread):
         self.sel.register(sock, events, data=None)
 
     def service_connection(self,key, mask, data):
+        global glob_mem
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
-                receive_str = "Received " + str(repr(recv_data)) + " from Server"
+                receive_str = "Received " + str(repr(recv_data)) + " from GFD"
+                mem = str((receive_str.split('{')[1]).split('}')[0])
+                glob_mem = str(mem)
                 log(receive_str)
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
@@ -47,7 +51,7 @@ class LFD_client(Thread):
             if not data.outb and data.messages:
                 data.outb = data.messages.pop(0)
             if data.outb:
-                send_message = "Sending " + str(repr(data.outb)) + " to Server"
+                send_message = "Sending " + str(repr(data.outb)) + " to GFD"
                 log(send_message)
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
@@ -86,7 +90,7 @@ class LFD_client(Thread):
                     time.sleep(heart_beat)
 
             except IOError as e:
-                close_message = "Server got disconnected"
+                close_message = "GFD got disconnected"
                 log(close_message)
                     
             except KeyboardInterrupt:
@@ -124,8 +128,8 @@ class LFD_server(Thread):
                     if (str(recv_data) == "b'I am a server and I am up.'"):
                         server_found = True
                         server_active = 1
-                        log("Server detected")
-                        data.outb = b'Server detected.'
+                        log("Server 2 detected")
+                        data.outb = bytes('Server detected | Mem: {0}'.format(glob_mem),'utf-8')
                         time.sleep(heart_beat)
 
                 else:
@@ -139,10 +143,15 @@ class LFD_server(Thread):
             except KeyboardInterrupt:
                 log("No response from server.")
 
-        #if mask & selectors.EVENT_WRITE:
-            #if data.outb:
-                #sent = sock.send(data.outb)  # Should be ready to write
-                #data.outb = data.outb[sent:] #to clear data.outb
+        if mask & selectors.EVENT_WRITE:
+            if data.outb:
+                try:
+                    sent = sock.send(data.outb)  # Should be ready to write
+                    data.outb = data.outb[sent:] #to clear data.outb
+                except:
+                    log(("Closing connection to " + str(data.addr)))
+                    self.sel.unregister(sock)
+                    sock.close()
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -170,7 +179,7 @@ class LFD_server(Thread):
 
 server_found = False
 
-heart_beat = float(input('\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2 #float(input('\nEnter heart beat frequency (in seconds): '))
 
 #LFD AS SERVER
 CONN_ID = 10

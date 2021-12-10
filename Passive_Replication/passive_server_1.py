@@ -14,6 +14,9 @@ import primary_status
 CHECK_POINT_FREQ = 5 #sends a checkpoint every 10 seconds
 CHECK_POIN_NUM = 0
 
+glob_mem = ''
+prev_mem = ''
+
 class Server_as_Server(Thread):
     def __init__(self, host, port, sel):
         Thread.__init__(self)
@@ -53,7 +56,7 @@ class Server_as_Server(Thread):
                     log(update)
                     print("------")
                     data.outb = b'Acknowledgement'
-                    print('Updated data.outb')
+                    #print('Updated data.outb')
                     
                 except:
                     if (str(recv_data_str) == "b'Are you alive?'"):
@@ -118,9 +121,12 @@ class Server_as_Client(Thread):
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
-                receive_str = "Received " + str(repr(recv_data)) + " from Server"
-                # log(receive_str)
+                receive_str = "Received " + str(repr(recv_data)) + " from LFD"
+                log(receive_str)
                 data.recv_total += len(recv_data)
+                glob_mem = receive_str
+                
+                
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
                 log(close_message)
@@ -130,7 +136,7 @@ class Server_as_Client(Thread):
             if not data.outb and data.messages:
                 data.outb = data.messages.pop(0)
             if data.outb:
-                send_message = "Sending " + str(repr(data.outb)) + " to Server"
+                send_message = "Sending " + str(repr(data.outb)) + " to LFD"
                 # log(send_message)
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
@@ -264,6 +270,9 @@ class Server_as_Primary_Replica(Thread):
         
     def run(self):
         global CHECK_POIN_NUM
+        global glob_mem
+        global prev_mem
+
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
@@ -278,6 +287,8 @@ class Server_as_Primary_Replica(Thread):
         lsock2.setblocking(False)
         self.sel2.register(lsock2, selectors.EVENT_WRITE | selectors.EVENT_READ, data=None)
 
+        print("!!!!!!!!!!!!!! Membership")
+        print(glob_mem, prev_mem)
         try:
             while True:
                 events1 = self.sel1.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
@@ -324,16 +335,18 @@ server_as_client.start()
 CONN_ID_p = 11
 host_p = None
 port_p = None
-if (primary_status.primary_replica == "S2"):
-    host_p, port_p = config.server_2_ip, config.server_2_listen_s1
-elif (primary_status.primary_replica == "S3"):
-    host_p, port_p = config.server_3_ip, config.server_3_listen_s1
+# if (primary_status.primary_replica == "S2"):
+#     host_p, port_p = config.server_2_ip, config.server_2_listen_s1
+# elif (primary_status.primary_replica == "S3"):
+#     host_p, port_p = config.server_3_ip, config.server_3_listen_s1
+# sel_client_to_p = selectors.DefaultSelector()
+
+host_p, port_p = config.server_2_ip, config.server_2_listen_s1
 sel_client_to_p = selectors.DefaultSelector()
 
-
 #needs to be started
-# server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
-# server_as_client_to_p.start()
+server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
+server_as_client_to_p.start()
 
 # Establishing Connection to replica S2 and S3
 host_s, port_s2, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
