@@ -347,6 +347,7 @@ server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()
 
 # Receive Checkpoint from S1
+
 CONN_ID_p = 11
 host_p, port_p = config.server_1_ip, config.server_1_listen_s2
 sel_client_to_p = selectors.DefaultSelector()
@@ -354,17 +355,18 @@ server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_t
 server_as_client_to_p.start()
 
 # Receive Checkpoint from S3
+
 CONN_ID_p = 11
 host_p, port_p = config.server_3_ip, config.server_3_listen_s2
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
+# Establishing Connection to replica S1 and S3
 
-# Establishing Connection to replica S2 and S3
 
-host_s, port_s2, port_s3 = config.server_2_ip, config.server_2_listen_s1, config.server_2_listen_s3
-sel_server2 = selectors.DefaultSelector()
+host_s, port_s1, port_s3 = config.server_2_ip, config.server_2_listen_s1, config.server_2_listen_s3
+sel_server1 = selectors.DefaultSelector()
 sel_server3 = selectors.DefaultSelector()
 
-server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel_server2, sel_server3)
+server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s3, sel_server1, sel_server3)
 server_as_primary_replica1.start()
