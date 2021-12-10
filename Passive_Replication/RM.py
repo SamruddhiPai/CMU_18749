@@ -7,6 +7,12 @@ import types
 import time
 from util import log
 import config
+import primary_status
+import GFD_threaded
+import subprocess
+# import passive_server_1
+# import passive_server_2
+# import passive_server_3
 
 sel = selectors.DefaultSelector()
 
@@ -35,13 +41,42 @@ def service_connection(key, mask):
             if recv_data == b'Send me the Status':
                 s = "+"
                 if "S1" in membership:
+                    print("OK")
                     s += "S1"
                 if "S2" in membership:
+                    print("OK2")
                     s += "S2"
                 if "S3" in membership:
+                    print("OK3")
                     s += "S3"
-                data.outb = bytes(s, 'utf-8')
-            print(data.outb)
+                
+            #print(data.outb)
+
+            memb_view_list = list(GFD_threaded.membership_view)
+            print("MEMB = ", memb_view_list)
+            if (primary_status.primary_replica == ""):
+                if (len(memb_view_list) == 1):
+                    primary_status.primary_replica = memb_view_list[0]
+                    data.outb = bytes(primary_status.primary_replica, 'utf-8')
+                
+            print("PRIMARY IS", primary_status.primary_replica)
+            if (primary_status.primary_replica not in memb_view_list):
+                print("TIME TO ELECT!!!")
+                if (len(memb_view_list) > 0):
+                    primary_status.primary_replica = memb_view_list[0]
+                    data.outb = bytes(primary_status.primary_replica, 'utf-8')
+                    print("ELECTED", primary_status.primary_replica)
+                    # if (primary_status.primary_replica == "S1"):
+                    #     passive_server_1.server_as_primary_replica1.start()
+                    #     passive_server_2.server_as_client_to_p.start()
+                    # elif (primary_status.primary_replica == "S2"):
+                    #     passive_server_2.server_as_primary_replica2.start()
+                    #     passive_server_1.server_as_client_to_p.start()
+                    # elif (primary_status.primary_replica == "S3"):
+                    #     passive_server_3.server_as_primary_replica1.start()
+                else:
+                    primary_status.primary_replica = ""
+
             recv_data_str = str(recv_data)
             add_members = recv_data_str.split(";")
             # add_members = recv_data_str
