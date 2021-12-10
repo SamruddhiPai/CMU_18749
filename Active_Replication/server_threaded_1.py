@@ -70,6 +70,7 @@ class Server_as_Server(Thread):
                 data.outb = data.outb[sent:] #to clear data.outb
         
     def run(self):
+        global X
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock.bind((self.host, self.port))
         lsock.listen()
@@ -113,8 +114,7 @@ class Server_as_Client(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
-        global glob_mem
-        global prev_mem
+        
         
         sock = key.fileobj
         #data = key.data
@@ -122,9 +122,9 @@ class Server_as_Client(Thread):
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from LFD"
-                log(receive_str)
+                #log(receive_str)
                 data.recv_total += len(recv_data)
-                glob_mem = receive_str
+                
                 
                 
             if not recv_data or data.recv_total == data.msg_total:
@@ -184,6 +184,7 @@ class Server_as_Client_to_Primary(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
+        global X
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
@@ -273,15 +274,13 @@ class Server_as_Primary_Replica(Thread):
         global CHECK_POIN_NUM
         global glob_mem
         global prev_mem
-        
-    
+        global X
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
         print("listening on", (self.host, self.port1))
         lsock1.setblocking(False)
         self.sel1.register(lsock1, selectors.EVENT_WRITE | selectors.EVENT_READ , data=None)
-        set_S2 = True
 
         lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock2.bind((self.host, self.port2))
@@ -289,7 +288,6 @@ class Server_as_Primary_Replica(Thread):
         print("listening on", (self.host, self.port2))
         lsock2.setblocking(False)
         self.sel2.register(lsock2, selectors.EVENT_WRITE | selectors.EVENT_READ, data=None)
-        set_S3 = True
 
         try:
             while True:

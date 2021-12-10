@@ -32,12 +32,13 @@ class LFD_client(Thread):
 
     def service_connection(self,key, mask, data):
         global glob_mem
+        global server_active
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
-                receive_str = "Received " + str(repr(recv_data)) + " from Server"
+                receive_str = "Received " + str(repr(recv_data)) + " from GFD"
                 mem = str((receive_str.split('{')[1]).split('}')[0])
                 glob_mem = str(mem)
                 log(receive_str)
@@ -51,7 +52,11 @@ class LFD_client(Thread):
             if not data.outb and data.messages:
                 data.outb = data.messages.pop(0)
             if data.outb:
-                send_message = "Sending " + str(repr(data.outb)) + " to Server"
+                send_message = "Sending " + str(repr(data.outb)) + " to GFD"
+                # print("server active before", server_active)
+                if server_active == 0:
+                    server_active = 3
+                # print("server active after", server_active)
                 log(send_message)
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
@@ -63,7 +68,7 @@ class LFD_client(Thread):
             self.start_connections(self.host, int(self.port))
             try:
                 while True:
-                    
+                    print("server_active value: ",server_active)
                     if server_active == 1:
                         messages = 'LFD2 says I am alive and add S2'
                     elif server_active == 0:
@@ -71,7 +76,6 @@ class LFD_client(Thread):
                     else:
                         messages = 'LFD2 says I am alive'
                     
-                    server_active = 3
                     
                     messages = [bytes(messages, 'utf-8')]
                     data = types.SimpleNamespace(
@@ -131,19 +135,19 @@ class LFD_server(Thread):
                         time.sleep(heart_beat)
 
                 else:
+                    server_active = 0
                     log(("Closing connection to " + str(data.addr)))
                     self.sel.unregister(sock)
                     sock.close()
-                    server_active = 0
                     print("listening on", (self.host, self.port))
                     
             except KeyboardInterrupt:
                 log("No response from server.")
 
-        if mask & selectors.EVENT_WRITE:
-            if data.outb:
-                sent = sock.send(data.outb)  # Should be ready to write
-                data.outb = data.outb[sent:] #to clear data.outb
+        #if mask & selectors.EVENT_WRITE:
+            #if data.outb:
+                #sent = sock.send(data.outb)  # Should be ready to write
+                #data.outb = data.outb[sent:] #to clear data.outb
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
