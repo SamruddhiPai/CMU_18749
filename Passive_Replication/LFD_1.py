@@ -152,6 +152,7 @@ class LFD_server(Thread):
                 log(("Closing connection to " + str(data.addr)))
                 self.sel.unregister(sock)
                 sock.close()
+                server_active = 0
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

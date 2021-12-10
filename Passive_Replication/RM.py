@@ -49,20 +49,22 @@ def service_connection(key, mask):
                 if "S3" in membership:
                     print("OK3")
                     s += "S3"
-                data.outb = bytes(s, 'utf-8')
-            print(data.outb)
+                
+            #print(data.outb)
 
             memb_view_list = list(GFD_threaded.membership_view)
             print("MEMB = ", memb_view_list)
             if (primary_status.primary_replica == ""):
                 if (len(memb_view_list) == 1):
                     primary_status.primary_replica = memb_view_list[0]
+                    data.outb = bytes(primary_status.primary_replica, 'utf-8')
                 
             print("PRIMARY IS", primary_status.primary_replica)
             if (primary_status.primary_replica not in memb_view_list):
                 print("TIME TO ELECT!!!")
                 if (len(memb_view_list) > 0):
                     primary_status.primary_replica = memb_view_list[0]
+                    data.outb = bytes(primary_status.primary_replica, 'utf-8')
                     print("ELECTED", primary_status.primary_replica)
                     # if (primary_status.primary_replica == "S1"):
                     #     passive_server_1.server_as_primary_replica1.start()
