@@ -10,7 +10,7 @@ from threading import Thread
 import config
 
 server_active = 3
-
+primary_server = ""
 global membership_view 
 membership_view = set()
 
@@ -34,13 +34,15 @@ class GFD_client(Thread):
 
     def service_connection(self,key, mask, data):
         global membership_view
+        global primary_server
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
-                receive_str = "Received " + str(repr(recv_data)) + " from Server"
+                receive_str = "Received " + str(repr(recv_data)) + " from RM"
                 log(receive_str)
+                primary_server = receive_str
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
@@ -109,6 +111,7 @@ class GFD_server(Thread):
 
     def service_connection(self, key, mask):
         global membership_view
+        global primary_server
         sock = key.fileobj
         data = key.data
         if mask & selectors.EVENT_READ:
@@ -137,22 +140,22 @@ class GFD_server(Thread):
                 add_members = recv_data_str
                 if "S1" in add_members and "add" in add_members:
                     self.membership.add("S1")
-                    data.outb = bytes("Add S1 | Mem: {0}".format(str(membership_view)),'utf-8')
+                    data.outb = bytes("Add S1 | Mem: {0} | Primary server: {1}".format(str(membership_view),str(primary_server)),'utf-8')
                 elif "S1" in add_members and "delete" in add_members:
                     self.membership.discard("S1")
-                    data.outb = bytes("Remove S1 | Mem: {0}".format(str(membership_view)),'utf-8')
+                    data.outb = bytes("Remove S1 | Mem: {0} | Primary server: {1}".format(str(membership_view),str(primary_server)),'utf-8')
                 if "S2" in add_members and "add" in add_members:
                     self.membership.add("S2")
-                    data.outb = bytes("Add S2 | Mem: {0}".format(str(membership_view)), 'utf-8')
+                    data.outb = bytes("Add S2 | Mem: {0} | Primary server: {1}".format(str(membership_view),str(primary_server)), 'utf-8')
                 elif "S2" in add_members and "delete" in add_members:
                     self.membership.discard("S2")
-                    data.outb = bytes("Remove S2 | Mem: {0}".format(str(membership_view)),'utf-8')
+                    data.outb = bytes("Remove S2 | Mem: {0} | Primary server: {1}".format(str(membership_view),str(primary_server)),'utf-8')
                 if "S3" in add_members and "add" in add_members:
                     self.membership.add("S3")
-                    data.outb = bytes("Add S3 | Mem: {0}".format(str(membership_view)),'utf-8')
+                    data.outb = bytes("Add S3 | Mem: {0} | Primary server: {1}".format(str(membership_view),str(primary_server)),'utf-8')
                 elif "S3" in add_members and "delete" in add_members:
                     self.membership.discard("S3")
-                    data.outb = bytes("Remove S3 | Mem: {0}".format(str(membership_view)),'utf-8')
+                    data.outb = bytes("Remove S3 | Mem: {0} | Primary server: {1}".format(str(membership_view),str(primary_server)),'utf-8')
                 if len(self.membership) == 0:
                     update = "GFD: 0 members"
                 else:
@@ -214,9 +217,9 @@ gfd_server.start()
 
 server_found = False
 
-heart_beat = 2#float(input('\nEnter heart beat frequency (in seconds): '))
+heart_beat = 2 #float(input('\nEnter heart beat frequency (in seconds): '))
 
-#LFD AS SERVER
+# #LFD AS SERVER
 # CONN_ID = 10
 # sel_server = selectors.DefaultSelector()
 # # host_s, port_s, num_conns = '127.0.0.1', 1235, 1
