@@ -9,13 +9,14 @@ import time
 from util import log
 from threading import Thread
 import config
-import primary_status
+#import primary_status
 
 CHECK_POINT_FREQ = 5 #sends a checkpoint every 10 seconds
 CHECK_POIN_NUM = 0
 
 glob_mem = ''
 prev_mem = ''
+primary_server = ''
 
 class Server_as_Server(Thread):
     def __init__(self, host, port, sel):
@@ -118,10 +119,19 @@ class Server_as_Client(Thread):
     def service_connection(self,key, mask, data):
         sock = key.fileobj
         #data = key.data
+        global primary_server
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from LFD"
+                r_str = receive_str.split('|')[-1]
+                if 'S1' in r_str:
+                    primary_server = "S1"
+                elif 'S2' in r_str:
+                    primary_server = "S2"
+                elif 'S3' in r_str:
+                    primary_server = "S3"
+                
                 log(receive_str)
                 data.recv_total += len(recv_data)
                 glob_mem = receive_str
@@ -267,7 +277,7 @@ class Server_as_Primary_Replica(Thread):
                 sel.unregister(sock)
                 sock.close()
 
-        
+
     def run(self):
         global CHECK_POIN_NUM
         global glob_mem
@@ -287,27 +297,27 @@ class Server_as_Primary_Replica(Thread):
         lsock2.setblocking(False)
         self.sel2.register(lsock2, selectors.EVENT_WRITE | selectors.EVENT_READ, data=None)
 
-        print("!!!!!!!!!!!!!! Membership")
-        print(glob_mem, prev_mem)
         try:
             while True:
-                events1 = self.sel1.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
-                for key, mask in events1:
-                    if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
-                        self.accept_wrapper(key.fileobj, self.sel1)
-                    else:
-                        self.service_connection(key, mask, self.sel1)
-                        print("Checkpoint Sent to Backup Replica Server 2")
+                if primary_server == 'S1':
+                    print('In S1 S1 S1 !!!!!!!!!!!!!!!!')
+                    events1 = self.sel1.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
+                    for key, mask in events1:
+                        if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
+                            self.accept_wrapper(key.fileobj, self.sel1)
+                        else:
+                            self.service_connection(key, mask, self.sel1)
+                            print("Checkpoint Sent to Backup Replica Server 2")
 
-                events2 = self.sel2.select(timeout=0.5)
-                for key, mask in events2:
-                    if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
-                        self.accept_wrapper(key.fileobj, self.sel2)
-                    else:
-                        self.service_connection(key, mask, self.sel2)
-                        print("Checkpoint Sent to Backup Replica Server 3")
-                CHECK_POIN_NUM += 1
-                time.sleep(CHECK_POINT_FREQ)
+                    events2 = self.sel2.select(timeout=0.5)
+                    for key, mask in events2:
+                        if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
+                            self.accept_wrapper(key.fileobj, self.sel2)
+                        else:
+                            self.service_connection(key, mask, self.sel2)
+                            print("Checkpoint Sent to Backup Replica Server 3")
+                    CHECK_POIN_NUM += 1
+                    time.sleep(CHECK_POINT_FREQ)
 
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
@@ -331,27 +341,23 @@ sel_client = selectors.DefaultSelector()
 server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()
 
+# Establishing Connection to replica S2 and S3
 
-CONN_ID_p = 11
-host_p = None
-port_p = None
-# if (primary_status.primary_replica == "S2"):
-#     host_p, port_p = config.server_2_ip, config.server_2_listen_s1
-# elif (primary_status.primary_replica == "S3"):
-#     host_p, port_p = config.server_3_ip, config.server_3_listen_s1
-# sel_client_to_p = selectors.DefaultSelector()
+host_s, port_s1, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
+sel_server1 = selectors.DefaultSelector()
+sel_server3 = selectors.DefaultSelector()
 
+server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s3, sel_server1, sel_server3)
+server_as_primary_replica1.start()
+
+# Receive checkpoint from S2 
 host_p, port_p = config.server_2_ip, config.server_2_listen_s1
 sel_client_to_p = selectors.DefaultSelector()
-
-#needs to be started
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
 
-# Establishing Connection to replica S2 and S3
-host_s, port_s2, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
-sel_server2 = selectors.DefaultSelector()
-sel_server3 = selectors.DefaultSelector()
-
-server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel_server2, sel_server3)
-server_as_primary_replica1.start()
+# Receive checkpoint from S3
+host_p, port_p = config.server_3_ip, config.server_3_listen_s1
+sel_client_to_p = selectors.DefaultSelector()
+server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
+server_as_client_to_p.start()
