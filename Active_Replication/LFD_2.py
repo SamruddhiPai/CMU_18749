@@ -58,7 +58,7 @@ class LFD_client(Thread):
                 #     server_active = 3
                 # print("server active after", server_active)
                 log(send_message)
-                server_active = 3
+                
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
     def run(self):

@@ -53,7 +53,7 @@ class LFD_client(Thread):
                 data.outb = data.messages.pop(0)
             if data.outb:
                 send_message = "Sending " + str(repr(data.outb)) + " to GFD"
-                print("server active before", server_active)
+                # print("server active before", server_active)
                 # if server_active == 0:
                 #     server_active = 3
                 # print("server active after", server_active)

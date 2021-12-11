@@ -235,7 +235,6 @@ class Server_as_Client_to_Primary(Thread):
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
 
-
 class Server_as_Primary_Replica(Thread):
     
     def __init__(self, host , port1, port2, sel1, sel2):
