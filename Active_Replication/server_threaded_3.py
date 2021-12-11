@@ -9,11 +9,11 @@ from util import log
 from threading import Thread
 import config
 
-CHECK_POINT_FREQ = 5
+CHECK_POINT_FREQ = 1
 CHECK_POIN_NUM = 0
 glob_mem = ''
 prev_mem = ''
-
+X = 0
 class Server_as_Server(Thread):
     def __init__(self, host, port, sel):
         Thread.__init__(self)
@@ -91,6 +91,8 @@ class Server_as_Server(Thread):
                         self.service_connection(key, mask)
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
+            self.sel.unregister(lsock)
+            lsock.close()
         finally:
             self.sel.close()
 
@@ -178,6 +180,7 @@ class Server_as_Client_to_Primary(Thread):
     
     def service_connection(self,key, mask, data):
         sock = key.fileobj
+        global X
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
@@ -333,6 +336,7 @@ X = 0
 server_as_server = Server_as_Server(host_s, port_s, sel_server)
 server_as_server.start()
 
+
 CONN_ID = 10
 # host_c, port_c = '127.0.0.1', 1235
 host_c, port_c = config.server_3_ip, config.server_3_sendto
@@ -340,23 +344,25 @@ sel_client = selectors.DefaultSelector()
 server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()
 
-# Receive Checkpoint from S1
+# Receive checkpoint from S1
 CONN_ID_p = 11
-host_p, port_p = config.server_1_ip, config.server_1_listen_s2
+host_p, port_p = config.server_1_ip, config.server_1_listen_s3
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
 
-# Receive Checkpoint from S3
+# Receive checkpoint from S2
 CONN_ID_p = 11
-host_p, port_p = config.server_3_ip, config.server_3_listen_s2
+host_p, port_p = config.server_2_ip, config.server_2_listen_s3
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
 
 # Establishing Connection to replica S1 and S2
+
 host_s, port_s1, port_s2 = config.server_3_ip, config.server_3_listen_s1, config.server_3_listen_s2
 sel_server1 = selectors.DefaultSelector()
 sel_server2 = selectors.DefaultSelector()
+
 server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s2, sel_server1, sel_server2)
 server_as_primary_replica1.start()

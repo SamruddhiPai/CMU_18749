@@ -54,8 +54,7 @@ class LFD_client(Thread):
             if data.outb:
                 send_message = "Sending " + str(repr(data.outb)) + " to GFD"
                 # print("server active before", server_active)
-                if server_active == 0:
-                    server_active = 3
+                server_active = 3
                 # print("server active after", server_active)
                 log(send_message)
                 sent = sock.send(data.outb)  # Should be ready to write
@@ -75,6 +74,7 @@ class LFD_client(Thread):
                         messages = 'LFD1 says I am alive and delete S1'
                     else:
                         messages = 'LFD1 says I am alive'
+
                     
                     messages = [bytes(messages, 'utf-8')]
                     data = types.SimpleNamespace(
