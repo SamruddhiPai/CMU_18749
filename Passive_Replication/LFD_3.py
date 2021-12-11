@@ -35,6 +35,7 @@ class LFD_client(Thread):
         global glob_mem
         sock = key.fileobj
         global primary_server
+        global server_active
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
@@ -55,6 +56,8 @@ class LFD_client(Thread):
                 data.outb = data.messages.pop(0)
             if data.outb:
                 send_message = "Sending " + str(repr(data.outb)) + " to GFD"
+                if server_active == 0:
+                    server_active = 3
                 log(send_message)
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
@@ -76,7 +79,7 @@ class LFD_client(Thread):
                         messages = 'LFD3 says I am alive'
                     heart_beat_id_cl += 1
                     messages += " | heartbeat_id: " + str(heart_beat_id_cl)
-                    server_active = 3
+                    # server_active = 3
                     
                     messages = [bytes(messages, 'utf-8')]
                     data = types.SimpleNamespace(
