@@ -12,6 +12,7 @@ import config
 server_active = 3
 heart_beat_id_cl = 0
 glob_mem = ''
+primary_server = ''
 class LFD_client(Thread):
     def __init__(self,host,port,sel):
         Thread.__init__(self)
@@ -33,11 +34,13 @@ class LFD_client(Thread):
     def service_connection(self,key, mask, data):
         global glob_mem
         sock = key.fileobj
+        global primary_server
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from GFD"
+                primary_server = receive_str.split('|')[-1]
                 mem = str((receive_str.split('{')[1]).split('}')[0])
                 glob_mem = str(mem)
                 log(receive_str)
@@ -119,6 +122,7 @@ class LFD_server(Thread):
         global server_active
         sock = key.fileobj
         data = key.data
+        global primary_server
         if mask & selectors.EVENT_READ:
             try:
                 try:
@@ -130,7 +134,7 @@ class LFD_server(Thread):
                         server_found = True
                         server_active = 1
                         log("Server 1 detected")
-                        data.outb = bytes('Server detected | Mem: {0}'.format(glob_mem),'utf-8')
+                        data.outb = bytes('Server detected | Mem: {0} | Primary Replica: {1}'.format(glob_mem, primary_server),'utf-8')
                         time.sleep(heart_beat)
 
                 else:
@@ -145,14 +149,15 @@ class LFD_server(Thread):
                 log("No response from server.")
 
         if mask & selectors.EVENT_WRITE:
-            try:
-                sent = sock.send(data.outb)  # Should be ready to write
-                data.outb = data.outb[sent:] #to clear data.outb
-            except:
-                log(("Closing connection to " + str(data.addr)))
-                self.sel.unregister(sock)
-                sock.close()
-                server_active = 0
+            if data.outb:
+                try:
+                    sent = sock.send(data.outb)  # Should be ready to write
+                    data.outb = data.outb[sent:] #to clear data.outb
+                except:
+                    log(("Closing connection to " + str(data.addr)))
+                    self.sel.unregister(sock)
+                    sock.close()
+                    server_active = 0
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
