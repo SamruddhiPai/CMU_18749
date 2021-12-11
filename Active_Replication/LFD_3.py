@@ -58,6 +58,7 @@ class LFD_client(Thread):
                     server_active = 3
                 # print("server active after", server_active)
                 log(send_message)
+                server_active = 3
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
     def run(self):
@@ -145,10 +146,17 @@ class LFD_server(Thread):
             except KeyboardInterrupt:
                 log("No response from server.")
 
-        #if mask & selectors.EVENT_WRITE:
-            #if data.outb:
-                #sent = sock.send(data.outb)  # Should be ready to write
-                #data.outb = data.outb[sent:] #to clear data.outb
+        if mask & selectors.EVENT_WRITE:
+            if data.outb:
+                try:
+                    sent = sock.send(data.outb)  # Should be ready to write
+                    data.outb = data.outb[sent:] #to clear data.outb
+                except:
+                    log(("Closing connection to " + str(data.addr)))
+                    self.sel.unregister(sock)
+                    sock.close()
+                    server_active = 0
+            
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

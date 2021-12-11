@@ -60,8 +60,8 @@ class Server_as_Server(Thread):
                         data.outb = b'I am alive!'
             else:
                 log(("Closing connection to " + str(data.addr)))
-                self.sel.unregister(sock)
-                sock.close()
+                self.sel.unregister(key.fileobj)
+                key.fileobj.close()
                 print("listening on", (self.host, self.port))
                     
         if mask & selectors.EVENT_WRITE:
@@ -114,7 +114,8 @@ class Server_as_Client(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
-        
+        global glob_mem
+        global prev_mem
         
         sock = key.fileobj
         #data = key.data
@@ -124,7 +125,7 @@ class Server_as_Client(Thread):
                 receive_str = "Received " + str(repr(recv_data)) + " from LFD"
                 #log(receive_str)
                 data.recv_total += len(recv_data)
-                
+                glob_mem = receive_str
                 
                 
             if not recv_data or data.recv_total == data.msg_total:
