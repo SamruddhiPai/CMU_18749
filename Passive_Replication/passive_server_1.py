@@ -47,6 +47,7 @@ class Server_as_Server(Thread):
                 recv_data_str = str(recv_data)
                 datalist = recv_data_str.split(";")
                 try:
+                    print("NOW WE HERE!!!!!!!!!")
                     req_type = datalist[0]
                     req_message = datalist[1]
                     req_str = "REQ: " + str(repr(datalist))
@@ -97,6 +98,7 @@ class Server_as_Server(Thread):
             print("caught keyboard interrupt, exiting")
         finally:
             self.sel.close()
+            lsock.close()
 
 
 class Server_as_Client(Thread):
@@ -198,7 +200,7 @@ class Server_as_Client_to_Primary(Thread):
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
-            print(str(recv_data))
+            # print(str(recv_data))
             if recv_data:
                 recv_data_str = recv_data.decode("utf-8")
                 print(recv_data_str)
@@ -220,6 +222,7 @@ class Server_as_Client_to_Primary(Thread):
                 close_message = "Closing Connection " + str(data.connid)
                 log(close_message)
                 self.sel.unregister(sock)
+                sock.close()
 
     def run(self):
         self.start_connections(self.host, int(self.port))

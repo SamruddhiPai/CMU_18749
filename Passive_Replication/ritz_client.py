@@ -22,6 +22,14 @@ host3, port3 = config.server_3_ip,config.server_3_listen
 
 host, port = config.gfd_ip, config.gfd_listen
 
+
+def get_status():
+    f = open("out.txt", "r")
+    temp = f.read()
+    f.close()
+    return temp
+
+
 class Client:
 
     def __init__(self,host,port,sel, replicaID):
@@ -44,9 +52,18 @@ class Client:
 
     def service_connection(self, key, mask, data):
         self.sock = key.fileobj
+        print("SOCK", self.sock)
+        print("Data", data)
+        # self.sock.recv(1024)
+        #Rituraj
         #data = key.data
         if mask & selectors.EVENT_READ:
-            self.recv_data = self.sock.recv(1024)  # Should be ready to read
+            try:
+                print("TESTING HERE")
+                self.recv_data = self.sock.recv(1024)  # Should be ready to read
+                print("HELLO", self.recv_data)
+            except:
+                print("Failed receving")
             if self.recv_data:
                 if c1_s1.output != "" or c1_s2.output != "" or c1_s2.output != "":
                     receive_str = "Discarded Duplicate reply from " + self.replicaID
@@ -67,8 +84,15 @@ class Client:
                 #print("sending", repr(data.outb), "to connection", data.connid)
                 req_str = "Sending " + str(repr(data.outb)) + " to Server " + str(self.host) + ":" + str(self.port)
                 log(req_str)
-                self.sent = self.sock.send(data.outb)  # Should be ready to write
-                data.outb = data.outb[self.sent:]
+                f = open("out.txt", "r")
+                primary = f.read()
+                f.close()
+                if (self.replicaID == primary):
+                    try:
+                        self.sent = self.sock.send(data.outb)  # Should be ready to write
+                        data.outb = data.outb[self.sent:]
+                    except:
+                        print("Failed sending ", str(data.outb))
 
 class GFD:
     def __init__(self,host,port,sel):
@@ -187,24 +211,15 @@ try:
         messages = "" + header_type + header_message
         messages = messages + header_data + ";"
         messages = [bytes(messages, 'utf-8')]
-        f = open("out.txt", "r")
-        primary = f.read()
-        f.close()
-        if (primary == "S1"):
-            c1_GFD.s1 = True
-        elif (primary == "S2"):
-            c1_GFD.s2 = True
-        elif (primary == "S3"):
-            c1_GFD.s3 = True
 
-        print("PRIMARYYYYY", primary)
             
         for i in range(2): #why is a loop here?
             if c1_GFD.s1:
-                print("S1 should be used")
                 events1 = s1_sel.select(timeout=1)
                 # print('Events 1', events1)
-                if c1_GFD.flag1 == 1: #1 has gone down, so launch it
+                print("S1 is in?", c1_GFD.s1)
+                print("C1_GFD FLAG is ", c1_GFD.flag1)
+                if c1_GFD.flag1 == 1: #1 had gone down, so we launched it
                     print("Flag 1 GFD!!!!!!!!!!!!!!")
                     s1_sel.close()
                     s1_sel = selectors.DefaultSelector()
@@ -224,6 +239,7 @@ try:
                     for key, mask in events1:
                         # print('Event1 before\n',events1)
                         c1_s1.service_connection(key, mask, data1)
+                        # Rituraj
                         s1_sel.modify(key.fileobj, selectors.EVENT_READ, data=None)
                         events1 = s1_sel.select(timeout=1)
                 else:
@@ -316,9 +332,9 @@ try:
                         #s3_sel.modify(key.fileobj, selectors.EVENT_READ | selectors.EVENT_WRITE , data=None)
                         s3_sel.modify(key.fileobj, selectors.EVENT_WRITE , data=None)
                         events3 = s3_sel.select(timeout=1)
-        # c1_s1.output = ""
-        # c1_s2.output = ""
-        # c1_s3.output = ""
+        c1_s1.output = ""
+        c1_s2.output = ""
+        c1_s3.output = ""
     
 except KeyboardInterrupt:
     print("caught keyboard interrupt, exiting")
