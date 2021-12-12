@@ -42,10 +42,13 @@ class LFD_client(Thread):
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from GFD"
                 primary_server = receive_str.split('|')[-1]
-                mem = str((receive_str.split('{')[1]).split('}')[0])
-                glob_mem = str(mem)
-                log(receive_str)
-                data.recv_total += len(recv_data)
+                try:
+                    mem = str((receive_str.split('{')[1]).split('}')[0])
+                    glob_mem = str(mem)
+                    log(receive_str)
+                    data.recv_total += len(recv_data)
+                except:
+                    None
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
                 log(close_message)

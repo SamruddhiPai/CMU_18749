@@ -9,7 +9,6 @@ from util import log
 from threading import Thread
 import config
 
-
 CHECK_POINT_FREQ = 5
 CHECK_POIN_NUM = 0
 glob_mem = ''
@@ -54,15 +53,15 @@ class Server_as_Server(Thread):
                     log(update)
                     print("------")
                     data.outb = b'Acknowledgement'
-                    print('Updated data.outb')
+                    #print('Updated data.outb')
                     
                 except:
                     if (str(recv_data_str) == "b'Are you alive?'"):
                         data.outb = b'I am alive!'
             else:
                 log(("Closing connection to " + str(data.addr)))
-                self.sel.unregister(sock)
-                sock.close()
+                self.sel.unregister(key.fileobj)
+                key.fileobj.close()
                 print("listening on", (self.host, self.port))
                     
         if mask & selectors.EVENT_WRITE:
@@ -71,6 +70,7 @@ class Server_as_Server(Thread):
                 data.outb = data.outb[sent:] #to clear data.outb
         
     def run(self):
+        global X
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock.bind((self.host, self.port))
         lsock.listen()
@@ -96,8 +96,6 @@ class Server_as_Server(Thread):
             self.sel.close()
 
 
-
-
 class Server_as_Client(Thread):
     def __init__(self, host, port, sel):
         Thread.__init__(self)
@@ -116,14 +114,20 @@ class Server_as_Client(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
+        global glob_mem
+        global prev_mem
+        
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
-                receive_str = "Received " + str(repr(recv_data)) + " from Server"
-                # log(receive_str)
+                receive_str = "Received " + str(repr(recv_data)) + " from LFD"
+                #log(receive_str)
                 data.recv_total += len(recv_data)
+                glob_mem = receive_str
+                
+                
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
                 log(close_message)
@@ -133,7 +137,7 @@ class Server_as_Client(Thread):
             if not data.outb and data.messages:
                 data.outb = data.messages.pop(0)
             if data.outb:
-                send_message = "Sending " + str(repr(data.outb)) + " to Server"
+                send_message = "Sending " + str(repr(data.outb)) + " to LFD"
                 # log(send_message)
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
@@ -157,7 +161,7 @@ class Server_as_Client(Thread):
                         self.service_connection(key, mask, data)
 
         except IOError as e:
-            close_message = "Server got disconnected"
+            close_message = "GFD got disconnected"
             log(close_message)
                 
         except KeyboardInterrupt:
@@ -181,6 +185,7 @@ class Server_as_Client_to_Primary(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
+        global X
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
@@ -230,7 +235,6 @@ class Server_as_Client_to_Primary(Thread):
         except KeyboardInterrupt:
             print("caught keyboard interrupt, exiting")
 
-
 class Server_as_Primary_Replica(Thread):
     
     def __init__(self, host , port1, port2, sel1, sel2):
@@ -271,7 +275,7 @@ class Server_as_Primary_Replica(Thread):
         global CHECK_POIN_NUM
         global glob_mem
         global prev_mem
-        
+        global X
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
@@ -347,7 +351,6 @@ server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()
 
 # Receive Checkpoint from S1
-
 CONN_ID_p = 11
 host_p, port_p = config.server_1_ip, config.server_1_listen_s2
 sel_client_to_p = selectors.DefaultSelector()
@@ -355,18 +358,17 @@ server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_t
 server_as_client_to_p.start()
 
 # Receive Checkpoint from S3
-
 CONN_ID_p = 11
 host_p, port_p = config.server_3_ip, config.server_3_listen_s2
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
-# Establishing Connection to replica S1 and S3
 
+# Establishing Connection to replica S2 and S3
 
-host_s, port_s1, port_s3 = config.server_2_ip, config.server_2_listen_s1, config.server_2_listen_s3
-sel_server1 = selectors.DefaultSelector()
+host_s, port_s2, port_s3 = config.server_2_ip, config.server_2_listen_s1, config.server_2_listen_s3
+sel_server2 = selectors.DefaultSelector()
 sel_server3 = selectors.DefaultSelector()
 
-server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s3, sel_server1, sel_server3)
+server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel_server2, sel_server3)
 server_as_primary_replica1.start()

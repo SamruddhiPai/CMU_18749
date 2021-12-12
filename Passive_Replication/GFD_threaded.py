@@ -133,6 +133,8 @@ class GFD_server(Thread):
                         s += "S2"
                     if "S3" in self.membership:
                         s += "S3"
+                    
+                    print("S = ", s)
                     data.outb = bytes(s, 'utf-8')
                 print(data.outb)
                 recv_data_str = str(recv_data)
@@ -184,6 +186,7 @@ class GFD_server(Thread):
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock.bind((self.host, self.port))
         lsock.listen()
         print("\nListening on", (self.host, self.port))

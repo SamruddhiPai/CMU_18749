@@ -74,6 +74,7 @@ class Server_as_Server(Thread):
         
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock.bind((self.host, self.port))
         lsock.listen()
         print("listening on", (self.host, self.port))
@@ -194,6 +195,7 @@ class Server_as_Client_to_Primary(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
+        global X
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
@@ -284,6 +286,7 @@ class Server_as_Primary_Replica(Thread):
         global prev_mem
 
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
         print("listening on", (self.host, self.port1))
@@ -291,6 +294,7 @@ class Server_as_Primary_Replica(Thread):
         self.sel1.register(lsock1, selectors.EVENT_WRITE | selectors.EVENT_READ , data=None)
 
         lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock2.bind((self.host, self.port2))
         lsock2.listen()
         print("listening on", (self.host, self.port2))
@@ -333,6 +337,8 @@ sel_server = selectors.DefaultSelector()
 X = 0
 server_as_server = Server_as_Server(host_s, port_s, sel_server)
 server_as_server.start()
+print("###########################################")
+print("SERVER AS SERVER!!!!!!!!!!!")
 
 
 CONN_ID = 10
@@ -341,6 +347,9 @@ host_c, port_c = config.server_3_ip, config.server_3_sendto
 sel_client = selectors.DefaultSelector()
 server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()
+print("###########################################")
+print("SERVER AS CLIENT !!!!!!!!!!!")
+
 
 # Receive checkpoint from S1
 CONN_ID_p = 11
@@ -348,6 +357,8 @@ host_p, port_p = config.server_1_ip, config.server_1_listen_s3
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
+print("###########################################")
+print("SERVER AS CLIENT TO PRIMARY 1 !!!!!!!!!!!")
 
 # Receive checkpoint from S1
 CONN_ID_p = 11
@@ -355,6 +366,9 @@ host_p, port_p = config.server_2_ip, config.server_2_listen_s3
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
+print("###########################################")
+print("SERVER AS CLIENT TO PRIMARY 2 !!!!!!!!!!!")
+
 
 # Establishing Connection to replica S1 and S2
 
@@ -362,5 +376,8 @@ host_s, port_s1, port_s2 = config.server_3_ip, config.server_3_listen_s1, config
 sel_server1 = selectors.DefaultSelector()
 sel_server2 = selectors.DefaultSelector()
 
+
 server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s2, sel_server1, sel_server2)
 server_as_primary_replica1.start()
+print("###########################################")
+print("SERVER AS primary REPLICA !!!!!!!!!!!")

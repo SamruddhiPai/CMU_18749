@@ -54,10 +54,11 @@ class LFD_client(Thread):
             if data.outb:
                 send_message = "Sending " + str(repr(data.outb)) + " to GFD"
                 # print("server active before", server_active)
-                if server_active == 0:
-                    server_active = 3
+                # if server_active == 0:
+                #     server_active = 3
                 # print("server active after", server_active)
                 log(send_message)
+                
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:]
     def run(self):
@@ -75,7 +76,8 @@ class LFD_client(Thread):
                         messages = 'LFD1 says I am alive and delete S1'
                     else:
                         messages = 'LFD1 says I am alive'
-                    
+                    # if server_active == 0:
+                    server_active = 3
                     messages = [bytes(messages, 'utf-8')]
                     data = types.SimpleNamespace(
                         connid=CONN_ID,
@@ -138,7 +140,6 @@ class LFD_server(Thread):
                     log(("Closing connection to " + str(data.addr)))
                     self.sel.unregister(sock)
                     sock.close()
-                    print('server active?', server_active)
                     print("listening on", (self.host, self.port))
                     
             except KeyboardInterrupt:
@@ -146,8 +147,15 @@ class LFD_server(Thread):
 
         if mask & selectors.EVENT_WRITE:
             if data.outb:
-                sent = sock.send(data.outb)  # Should be ready to write
-                data.outb = data.outb[sent:] #to clear data.outb
+                try:
+                    sent = sock.send(data.outb)  # Should be ready to write
+                    data.outb = data.outb[sent:] #to clear data.outb
+                except:
+                    log(("Closing connection to " + str(data.addr)))
+                    self.sel.unregister(sock)
+                    sock.close()
+                    server_active = 0
+            
     
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -171,7 +179,7 @@ class LFD_server(Thread):
             print("caught keyboard interrupt, exiting")
         #finally:
             #self.sel.close()
-
+    
 
 server_found = False
 

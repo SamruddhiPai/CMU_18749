@@ -74,6 +74,7 @@ class Server_as_Server(Thread):
         
     def run(self):
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock.bind((self.host, self.port))
         lsock.listen()
         print("listening on", (self.host, self.port))
@@ -193,6 +194,7 @@ class Server_as_Client_to_Primary(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
+        global X
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
@@ -283,6 +285,7 @@ class Server_as_Primary_Replica(Thread):
         global prev_mem
 
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
         print("listening on", (self.host, self.port1))
@@ -290,6 +293,7 @@ class Server_as_Primary_Replica(Thread):
         self.sel1.register(lsock1, selectors.EVENT_WRITE | selectors.EVENT_READ , data=None)
 
         lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        lsock2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock2.bind((self.host, self.port2))
         lsock2.listen()
         print("listening on", (self.host, self.port2))

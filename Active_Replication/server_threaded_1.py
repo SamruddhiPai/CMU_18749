@@ -60,8 +60,8 @@ class Server_as_Server(Thread):
                         data.outb = b'I am alive!'
             else:
                 log(("Closing connection to " + str(data.addr)))
-                self.sel.unregister(sock)
-                sock.close()
+                self.sel.unregister(key.fileobj)
+                key.fileobj.close()
                 print("listening on", (self.host, self.port))
                     
         if mask & selectors.EVENT_WRITE:
@@ -70,6 +70,7 @@ class Server_as_Server(Thread):
                 data.outb = data.outb[sent:] #to clear data.outb
         
     def run(self):
+        global X
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock.bind((self.host, self.port))
         lsock.listen()
@@ -93,6 +94,7 @@ class Server_as_Server(Thread):
             print("caught keyboard interrupt, exiting")
         finally:
             self.sel.close()
+
 
 class Server_as_Client(Thread):
     def __init__(self, host, port, sel):
@@ -121,7 +123,7 @@ class Server_as_Client(Thread):
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from LFD"
-                # log(receive_str)
+                #log(receive_str)
                 data.recv_total += len(recv_data)
                 glob_mem = receive_str
                 
@@ -183,6 +185,7 @@ class Server_as_Client_to_Primary(Thread):
         self.sel.register(sock, events, data=None)
     
     def service_connection(self,key, mask, data):
+        global X
         sock = key.fileobj
         #data = key.data
         if mask & selectors.EVENT_READ:
@@ -272,15 +275,13 @@ class Server_as_Primary_Replica(Thread):
         global CHECK_POIN_NUM
         global glob_mem
         global prev_mem
-        
-    
+        global X
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
         print("listening on", (self.host, self.port1))
         lsock1.setblocking(False)
         self.sel1.register(lsock1, selectors.EVENT_WRITE | selectors.EVENT_READ , data=None)
-        set_S2 = True
 
         lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock2.bind((self.host, self.port2))
@@ -288,13 +289,13 @@ class Server_as_Primary_Replica(Thread):
         print("listening on", (self.host, self.port2))
         lsock2.setblocking(False)
         self.sel2.register(lsock2, selectors.EVENT_WRITE | selectors.EVENT_READ, data=None)
-        set_S3 = True
 
         try:
             while True:
                 events1 = self.sel1.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
                 if glob_mem != prev_mem:
                     if ('S2' in glob_mem and 'S2' not in prev_mem):
+                        
                         for key, mask in events1:
                             if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                                 self.accept_wrapper(key.fileobj, self.sel1)
@@ -332,7 +333,6 @@ class Server_as_Primary_Replica(Thread):
             self.sel1.close()
             self.sel2.close()
 
-
 connid = 1
 
 # host_s, port_s = '127.0.0.1', 1234
@@ -341,35 +341,32 @@ sel_server = selectors.DefaultSelector()
 X = 0
 server_as_server = Server_as_Server(host_s, port_s, sel_server)
 server_as_server.start()
-# print("Shaktiman1")
+
+
 CONN_ID = 10
 # host_c, port_c = '127.0.0.1', 1235
 host_c, port_c = config.server_1_ip, config.server_1_sendto
 sel_client = selectors.DefaultSelector()
 server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()
-# print("Shaktiman2")
+
 # Establishing Connection to replica S2 and S3
-host_s, port_s2, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
-sel_server2 = selectors.DefaultSelector()
+
+host_s, port_s1, port_s3 = config.server_1_ip, config.server_1_listen_s2, config.server_1_listen_s3
+sel_server1 = selectors.DefaultSelector()
 sel_server3 = selectors.DefaultSelector()
-server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s2, port_s3, sel_server2, sel_server3)
+
+server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s3, sel_server1, sel_server3)
 server_as_primary_replica1.start()
 
-
-# Receive checkpoint from S2
-
+# Receive checkpoint from S2 
 host_p, port_p = config.server_2_ip, config.server_2_listen_s1
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
 
-
-# # Receive checkpoint from S3
-
+# Receive checkpoint from S3
 host_p, port_p = config.server_3_ip, config.server_3_listen_s1
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
-
-

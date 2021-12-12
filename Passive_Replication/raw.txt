@@ -1,0 +1,8 @@
+ps -fA | grep python3
+
+mod_client1 is working for minimum requirement
+
+
+
+
+If there are no servers, then we will have to input a dummy number 10 and enter.
