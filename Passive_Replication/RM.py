@@ -72,9 +72,9 @@ def service_connection(key, mask):
                     data.outb = bytes('Primary Server is %s'%(primary_replica), 'utf-8')
                 
 
-            cprint("***************", "BLUE")    
-            cprint("PRIMARY = "+primary_replica, "BLUE")
-            cprint("***************", "BLUE")    
+            cprint("***************", "CYAN")    
+            cprint("PRIMARY = "+primary_replica, "CYAN")
+            cprint("***************", "CYAN")    
             
             f = open("out.txt", "w")
             f.write(primary_replica)
