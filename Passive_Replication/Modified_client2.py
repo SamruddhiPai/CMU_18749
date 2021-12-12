@@ -15,7 +15,7 @@ def get_status():
     f.close()
     return temp
 
-CONN_ID = 1
+CONN_ID = 2
 s1_sel = selectors.DefaultSelector()
 s2_sel = selectors.DefaultSelector()
 s3_sel = selectors.DefaultSelector()
