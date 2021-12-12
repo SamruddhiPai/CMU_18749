@@ -202,7 +202,7 @@ class Server_as_Client_to_Primary(Thread):
             print(str(recv_data))
             if recv_data:
                 recv_data_str = recv_data.decode("utf-8")
-                print(recv_data_str)
+                # print(recv_data_str)
                 datalist = recv_data_str.split(';')
                 log('Current State: '+ str(datalist[0]))
                 log('Checkpoint Value: ' + str(datalist[1]))
