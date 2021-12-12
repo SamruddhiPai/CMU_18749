@@ -46,7 +46,7 @@ class GFD_client(Thread):
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
-                log(close_message)
+                log(close_message, "RED")
                 self.sel.unregister(sock)
                 #sock.close()
         if mask & selectors.EVENT_WRITE:
@@ -173,7 +173,7 @@ class GFD_server(Thread):
                     #     if (str(recv_data_str) == "b'Are you alive?'"):
                     #         data.outb = b'I am alive!'
             else:
-                log(("Closing connection to " + str(data.addr)))
+                log(("Closing connection to " + str(data.addr)), "RED")
                 self.sel.unregister(sock)
                 sock.close()
                 print("listening on", (host, port))
