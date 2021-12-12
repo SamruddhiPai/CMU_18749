@@ -337,8 +337,6 @@ sel_server = selectors.DefaultSelector()
 X = 0
 server_as_server = Server_as_Server(host_s, port_s, sel_server)
 server_as_server.start()
-print("###########################################")
-print("SERVER AS SERVER!!!!!!!!!!!")
 
 
 CONN_ID = 10
@@ -347,8 +345,6 @@ host_c, port_c = config.server_3_ip, config.server_3_sendto
 sel_client = selectors.DefaultSelector()
 server_as_client = Server_as_Client(host_c, port_c, sel_client)
 server_as_client.start()
-print("###########################################")
-print("SERVER AS CLIENT !!!!!!!!!!!")
 
 
 # Receive checkpoint from S1
@@ -357,8 +353,6 @@ host_p, port_p = config.server_1_ip, config.server_1_listen_s3
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
-print("###########################################")
-print("SERVER AS CLIENT TO PRIMARY 1 !!!!!!!!!!!")
 
 # Receive checkpoint from S1
 CONN_ID_p = 11
@@ -366,8 +360,6 @@ host_p, port_p = config.server_2_ip, config.server_2_listen_s3
 sel_client_to_p = selectors.DefaultSelector()
 server_as_client_to_p = Server_as_Client_to_Primary(host_p, port_p, sel_client_to_p)
 server_as_client_to_p.start()
-print("###########################################")
-print("SERVER AS CLIENT TO PRIMARY 2 !!!!!!!!!!!")
 
 
 # Establishing Connection to replica S1 and S2
@@ -379,5 +371,3 @@ sel_server2 = selectors.DefaultSelector()
 
 server_as_primary_replica1 = Server_as_Primary_Replica(host_s, port_s1, port_s2, sel_server1, sel_server2)
 server_as_primary_replica1.start()
-print("###########################################")
-print("SERVER AS primary REPLICA !!!!!!!!!!!")
