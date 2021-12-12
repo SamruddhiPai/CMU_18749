@@ -126,6 +126,7 @@ class Server_as_Client(Thread):
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from LFD"
                 r_str = receive_str.split('|')[-1]
+                cprint("R_STR DETECTED " + r_str, "CYAN")
                 if 'S1' in r_str:
                     primary_server = "S1"
                 elif 'S2' in r_str:
@@ -284,6 +285,7 @@ class Server_as_Primary_Replica(Thread):
         global CHECK_POIN_NUM
         global glob_mem
         global prev_mem
+        global primary_server
 
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lsock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -303,9 +305,11 @@ class Server_as_Primary_Replica(Thread):
 
         try:
             while True:
+                # cprint("PRIMARY DETECTED " + primary_server, "CYAN")
                 if primary_server == 'S2':
                     print('In S2 S2 S2 !!!!!!!!!!!!!!!!')
                     events1 = self.sel1.select(timeout=0.5) # Blocks until client ready for I/O, in effect till client sends data
+                    
                     for key, mask in events1:
                         if key.data is None: # key.data opaque class, will be assigned to ceratin type by client(ex: types.SimpleNamespace)
                             self.accept_wrapper(key.fileobj, self.sel1)
