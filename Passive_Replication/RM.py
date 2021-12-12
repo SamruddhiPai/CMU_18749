@@ -7,25 +7,13 @@ import types
 import time
 from util import log
 import config
+from color import cprint
 # import primary_status
 # import GFD_threaded
 import subprocess
 # import passive_server_1
 # import passive_server_2
 # import passive_server_3
-
-
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 
 sel = selectors.DefaultSelector()
@@ -61,37 +49,47 @@ def service_connection(key, mask):
             if recv_data == b'Send me the Status':
                 s = "+"
                 if "S1" in recv_data_str:
-                    print("OK")
+                    # print("OK")
                     s += "S1+"
                 if "S2" in recv_data_str:
-                    print("OK2")
+                    # print("OK2")
                     s += "S2+"
                 if "S3" in recv_data_str:
-                    print("OK3")
+                    # print("OK3")
                     s += "S3+"
                 
             #print(data.outb)
             # print('s',s)
             memb_view_list = list(membership) #s.split('+')
-            print(color.BOLD + color.PURPLE + 'Hello World !' + color.END)
+            # print(color.BOLD + color.PURPLE + 'Hello World !' + color.END)
             # print(color.BOLD + color.GREEN + "MEMB = " + color.END, memb_view_list)
             if (primary_replica == ""):
                 if (len(memb_view_list) == 1):
                     primary_replica = memb_view_list[0]
+                    cprint("-------------------------", "GREEN")
+                    cprint(" NEW PRIMARY ELECTED "+primary_replica, "GREEN")
+                    cprint("-------------------------", "GREEN")
                     data.outb = bytes('Primary Server is %s'%(primary_replica), 'utf-8')
                 
-            print("PRIMARY IS", primary_replica)
+
+            cprint("***************", "BLUE")    
+            cprint("PRIMARY = "+primary_replica, "BLUE")
+            cprint("***************", "BLUE")    
             
             f = open("out.txt", "w")
             f.write(primary_replica)
             f.close()
             
             if (primary_replica not in memb_view_list):
-                print("TIME TO ELECT!!!")
+                cprint("-----------------------------", "RED")
+                cprint("*****   ELECTION TIME   *****", "RED")
+                cprint("-----------------------------", "RED")
                 if (len(memb_view_list) > 0):
                     primary_replica = memb_view_list[0]
                     data.outb = bytes('Primary Server is %s'%(primary_replica), 'utf-8')
-                    print("ELECTED", primary_replica)
+                    cprint("-------------------------", "GREEN")
+                    cprint(" NEW PRIMARY ELECTED "+primary_replica , "GREEN")
+                    cprint("-------------------------", "GREEN")
                     # if (primary_status.primary_replica == "S1"):
                     #     passive_server_1.server_as_primary_replica1.start()
                     #     passive_server_2.server_as_client_to_p.start()
@@ -147,7 +145,7 @@ def service_connection(key, mask):
             #     #     if (str(recv_data_str) == "b'Are you alive?'"):
             #     #         data.outb = b'I am alive!'
         else:
-            log(("Closing connection to " + str(data.addr)))
+            log(("Closing connection to " + str(data.addr)), "RED")
             sel.unregister(sock)
             sock.close()
             print("listening on", (host, port))

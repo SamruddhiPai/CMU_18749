@@ -8,6 +8,7 @@ import time
 from util import log
 from threading import Thread
 import config
+from color import cprint
 #import primary_status
 
 CHECK_POINT_FREQ = 5 #sends a checkpoint every 10 seconds
@@ -53,7 +54,7 @@ class Server_as_Server(Thread):
                     num = datalist[2]
                     X += int(num)
                     update = "X = " + str(original_X) + " ---> " + "X = " + str(X)
-                    log(update)
+                    log(update, "YELLOW")
                     print("------")
                     data.outb = b'Acknowledgement'
                     #print('Updated data.outb')
@@ -62,7 +63,7 @@ class Server_as_Server(Thread):
                     if (str(recv_data_str) == "b'Are you alive?'"):
                         data.outb = b'I am alive!'
             else:
-                log(("Closing connection to " + str(data.addr)))
+                log(("Closing connection to " + str(data.addr)), "RED")
                 self.sel.unregister(sock)
                 sock.close()
                 print("listening on", (self.host, self.port))
@@ -81,7 +82,7 @@ class Server_as_Server(Thread):
         lsock.setblocking(False)
         self.sel.register(lsock, selectors.EVENT_READ, data=None)
 
-        print("X = " + str(X))
+        cprint("X = " + str(X), "YELLOW")
         print("------")
 
         try:
@@ -139,7 +140,7 @@ class Server_as_Client(Thread):
                 
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
-                log(close_message)
+                log(close_message, "RED")
                 self.sel.unregister(sock)
                 #sock.close()
         if mask & selectors.EVENT_WRITE:
@@ -204,10 +205,10 @@ class Server_as_Client_to_Primary(Thread):
                 recv_data_str = recv_data.decode("utf-8")
                 # print(recv_data_str)
                 datalist = recv_data_str.split(';')
-                log('Current State: '+ str(datalist[0]))
-                log('Checkpoint Value: ' + str(datalist[1]))
+                log('Current State: '+ str(datalist[0]), "GREEN")
+                log('Checkpoint Value: ' + str(datalist[1]), "GREEN")
                 receive_str = "Received status (X) from from Primary Server as " + datalist[0] + " and check point number is "+ datalist[1]
-                log(receive_str)
+                log(receive_str, "GREEN")
                 X = int(datalist[0])
                 checkpoint_counter = int(datalist[1])
                 # checkpoint_msg = "Checkpoint counter on server 2 is updated to " + str(checkpoint_counter)
@@ -219,7 +220,7 @@ class Server_as_Client_to_Primary(Thread):
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
-                log(close_message)
+                log(close_message, "RED")
                 self.sel.unregister(sock)
 
     def run(self):
@@ -274,7 +275,7 @@ class Server_as_Primary_Replica(Thread):
                 sent = sock.send(data.outb)  # Should be ready to write
                 data.outb = data.outb[sent:] #to clear data.outb
             except:
-                log(("Closing connection to " + str(data.addr)))
+                log(("Closing connection to " + str(data.addr)), "RED")
                 sel.unregister(sock)
                 sock.close()
 
@@ -310,7 +311,7 @@ class Server_as_Primary_Replica(Thread):
                             self.accept_wrapper(key.fileobj, self.sel1)
                         else:
                             self.service_connection(key, mask, self.sel1)
-                            print("Checkpoint Sent to Backup Replica Server 2")
+                            cprint("Checkpoint Sent to Backup Replica Server 1", "PURPLE")
 
                     events2 = self.sel2.select(timeout=0.5)
                     for key, mask in events2:
@@ -318,7 +319,7 @@ class Server_as_Primary_Replica(Thread):
                             self.accept_wrapper(key.fileobj, self.sel2)
                         else:
                             self.service_connection(key, mask, self.sel2)
-                            print("Checkpoint Sent to Backup Replica Server 3")
+                            cprint("Checkpoint Sent to Backup Replica Server 3", "PURPLE")
                     CHECK_POIN_NUM += 1
                     time.sleep(CHECK_POINT_FREQ)
 

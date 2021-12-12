@@ -7,7 +7,7 @@ import types
 import time
 from util import log
 import config
-
+from color import cprint
 
 def get_status():
     f = open("out.txt", "r")
@@ -146,7 +146,7 @@ class GFD:
                 data.recv_total += len(recv_data)
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
-                log(close_message)
+                log(close_message, "RED")
                 self.sel.unregister(sock)
                 #sock.close()
         if mask & selectors.EVENT_WRITE:

@@ -8,6 +8,7 @@ import time, errno
 from util import log
 from threading import Thread
 import config
+from color import cprint
 
 server_active = 3
 heart_beat_id_cl = 0
@@ -51,7 +52,7 @@ class LFD_client(Thread):
                     None
             if not recv_data or data.recv_total == data.msg_total:
                 close_message = "Closing Connection " + str(data.connid)
-                log(close_message)
+                log(close_message, "RED")
                 self.sel.unregister(sock)
                 #sock.close()
         if mask & selectors.EVENT_WRITE:
@@ -139,13 +140,13 @@ class LFD_server(Thread):
                     if (str(recv_data) == "b'I am a server and I am up.'"):
                         server_found = True
                         server_active = 1
-                        log("Server 1 detected")
+                        log("Server 1 detected", "GREEN")
                         data.outb = bytes('Server detected | Mem: {0} | Primary Replica: {1}'.format(glob_mem, primary_server),'utf-8')
                         time.sleep(heart_beat)
 
                 else:
-                    log("Failed Heartbeat to Server 1")
-                    log(("Closing connection to " + str(data.addr)))
+                    log("Failed Heartbeat to Server 1", "RED")
+                    log(("Closing connection to " + str(data.addr)), "RED")
                     self.sel.unregister(sock)
                     sock.close()
                     server_active = 0
@@ -160,7 +161,7 @@ class LFD_server(Thread):
                     sent = sock.send(data.outb)  # Should be ready to write
                     data.outb = data.outb[sent:] #to clear data.outb
                 except:
-                    log(("Closing connection to " + str(data.addr)))
+                    log(("Closing connection to " + str(data.addr)), "RED")
                     self.sel.unregister(sock)
                     sock.close()
                     server_active = 0
