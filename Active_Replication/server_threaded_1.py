@@ -72,7 +72,6 @@ class Server_as_Server(Thread):
     def run(self):
         global X
         lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        lsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock.bind((self.host, self.port))
         lsock.listen()
         print("listening on", (self.host, self.port))
@@ -124,7 +123,7 @@ class Server_as_Client(Thread):
             recv_data = sock.recv(1024)  # Should be ready to read
             if recv_data:
                 receive_str = "Received " + str(repr(recv_data)) + " from LFD"
-                #log(receive_str)
+                log(receive_str)
                 data.recv_total += len(recv_data)
                 glob_mem = receive_str
                 
@@ -191,15 +190,15 @@ class Server_as_Client_to_Primary(Thread):
         #data = key.data
         if mask & selectors.EVENT_READ:
             recv_data = sock.recv(1024)  # Should be ready to read
-            print(str(recv_data))
+            # print(str(recv_data))
             if recv_data:
                 recv_data_str = recv_data.decode("utf-8")
-                print(recv_data_str)
+                # print(recv_data_str)
                 datalist = recv_data_str.split(';')
                 log('Current State: '+ str(datalist[0]))
                 log('Checkpoint Value: ' + str(datalist[1]))
                 receive_str = "Received status (X) from from Primary Server as " + datalist[0] + " and check point number is "+ datalist[1]
-                log(receive_str)
+                # log(receive_str)
                 X = int(datalist[0])
                 checkpoint_counter = int(datalist[1])
                 # checkpoint_msg = "Checkpoint counter on server 2 is updated to " + str(checkpoint_counter)
@@ -278,7 +277,6 @@ class Server_as_Primary_Replica(Thread):
         global prev_mem
         global X
         lsock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        lsock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock1.bind((self.host, self.port1))
         lsock1.listen()
         print("listening on", (self.host, self.port1))
@@ -286,7 +284,6 @@ class Server_as_Primary_Replica(Thread):
         self.sel1.register(lsock1, selectors.EVENT_WRITE | selectors.EVENT_READ , data=None)
 
         lsock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        lsock2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lsock2.bind((self.host, self.port2))
         lsock2.listen()
         print("listening on", (self.host, self.port2))
@@ -321,7 +318,7 @@ class Server_as_Primary_Replica(Thread):
                                 self.accept_wrapper(key.fileobj, self.sel2)
                             else:
                                 self.service_connection(key, mask, self.sel2)
-                                print("Checkpoint Sent to Backup Replica Server 2")
+                                print("Checkpoint Sent to Backup Replica Server 3")
                                 CHECK_POIN_NUM += 1
                                 time.sleep(CHECK_POINT_FREQ)
                                 prev_mem = glob_mem

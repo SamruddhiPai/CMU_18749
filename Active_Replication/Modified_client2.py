@@ -8,13 +8,6 @@ import time
 from util import log
 import config
 
-def get_status():
-    f = open("out.txt", "r")
-    temp = f.read()
-    f.close()
-    return temp
-
-
 CONN_ID = 2
 s1_sel = selectors.DefaultSelector()
 s2_sel = selectors.DefaultSelector()
